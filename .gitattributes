@@ -1,0 +1,4 @@
+*.jpg filter=lfs diff=lfs merge=lfs -text
+websim/floor.jpg filter=lfs diff=lfs merge=lfs -text
+websim/dirtybubble.glb filter=lfs diff=lfs merge=lfs -text
+websim/prop.glb filter=lfs diff=lfs merge=lfs -text

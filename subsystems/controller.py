@@ -7,4 +7,4 @@ class Controller():
         return bool(int(value))
 
     def getAxis(self, id):
-        return network["Controller/Axis"+str(id)]
+        return network["Controller/Axis"+str(id)] or 0
