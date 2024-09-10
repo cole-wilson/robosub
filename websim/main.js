@@ -276,7 +276,7 @@ rotation: (${r(cube.rotation.x)}, ${r(cube.rotation.y)}, ${r(cube.rotation.z)})<
 
 	camcamera.position.x = cube.position.x;
 	camcamera.position.y = cube.position.y;
-	camcamera.position.z = cube.position.z+0.6;
+	camcamera.position.z = cube.position.z+1.2;
 	// camcamera.lookAt(cube.position)
 	camcamera.rotation.reorder( 'ZYX' );
 	camcamera.rotation.y = cube.rotation.y;
@@ -325,7 +325,7 @@ async function main() {
 
 		motorProp.rotation.reorder( 'ZYX' );
 		motorProp.rotation.z = Math.PI * (motor.theta/180)
-		motorProp.rotation.x = Math.PI * (-motor.phi/180)
+		motorProp.rotation.x = Math.PI * (motor.phi/180)
 
 
 		cube.add(motorProp)
