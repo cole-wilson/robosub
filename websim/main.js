@@ -4,6 +4,7 @@ import { DragControls } from 'three/addons/controls/DragControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 let thrusters;
+window.THREE = THREE
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -44,7 +45,7 @@ function getcanvasdata() {
 	return out;
 }
 
-note.rotateZ(Math.PI/4);
+note.rotation.z=(Math.PI/4);
 note.rotateY(Math.PI/4);
 note.rotateX(Math.PI/4);
 note.position.x = -5;
@@ -235,10 +236,13 @@ async function animate() {
 	}
 
 
-	cube.rotation.reorder( 'ZXY' );
-	cube.rotation.x -= rotspeedx;
-	cube.rotation.y -= rotspeedy;
-	cube.rotation.z -= rotspeedz;
+	// cube.rotation.reorder( 'ZXY' );
+	cube.rotateX(rotspeedx);
+	cube.rotateY(rotspeedy);
+	cube.rotateZ(rotspeedz);
+	// cube.rotation.x -= rotspeedx;
+	// cube.rotation.y -= rotspeedy;
+	// cube.rotation.z -= rotspeedz;
 
 
 	info.innerHTML = `
@@ -378,8 +382,8 @@ window.onkeydown = (e) => {
 		else if (e.key == 'd') eel.set_network("Controller/Axis0", 1);
 		else if (e.key == 'w') eel.set_network("Controller/Axis1", -1);
 		else if (e.key == 's') eel.set_network("Controller/Axis1", 1);
-		else if (e.key == 'ArrowLeft') eel.set_network("Controller/Axis2", 1);
-		else if (e.key == 'ArrowRight') eel.set_network("Controller/Axis2", -1);
+		else if (e.key == 'ArrowLeft') eel.set_network("Controller/Axis2", -1);
+		else if (e.key == 'ArrowRight') eel.set_network("Controller/Axis2", 1);
 		else if (e.key == 'ArrowDown') eel.set_network("Controller/Axis3", 1);
 		else if (e.key == 'ArrowUp') eel.set_network("Controller/Axis3", -1);
 	}

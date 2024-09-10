@@ -2,6 +2,7 @@ from subsystems.controller import Controller
 from subsystems.imu import IMU
 from subsystems.thruster import Thruster, get_movement, solve_motion
 from simulation import expose_motors, set_movement
+from scipy.spatial.transform import Rotation
 
 controller = Controller()
 imu = IMU()
@@ -30,10 +31,14 @@ def loop():
 
     grav =0# 2
 
-    y_speed = -20 * controller.getAxis(3)
+    y_speed = -5 * controller.getAxis(3)
     x_speed = 5 * controller.getAxis(2)
     z_speed = -5 * controller.getAxis(1)
 
+
+    pool_oriented_speeds = [x_speed, y_speed, z_speed]
+    rotation = Rotation.from_euler("ZYX",[0, -imu.get_roll(), -imu.get_pitch()])
+    x_speed, y_speed, z_speed = rotation.apply(pool_oriented_speeds)
     # yaw_speed = 5 * controller.getAxis(2)
 
     pitch_speed = 0
@@ -53,6 +58,9 @@ def loop():
         yaw_speed = 1
     elif controller.getButton(4):
         yaw_speed = -1
+
+
+
     # print(x_speed, y_speed, z_speed, pitch_speed, roll_speed, yaw_speed)
     motor_speeds = solve_motion(motors, x_speed, y_speed, z_speed-grav, pitch_speed, roll_speed, yaw_speed)["speeds"]
 
