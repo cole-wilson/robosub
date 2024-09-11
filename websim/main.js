@@ -17,6 +17,7 @@ const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.inner
 camera.up.set(0, 0, 1)
 const renderer = new THREE.WebGLRenderer();
 const controls = new OrbitControls( camera, renderer.domElement );
+window.controls = controls
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 const camcamera = new THREE.PerspectiveCamera( 75, 1, 0.1, 1000 );
@@ -137,6 +138,7 @@ function r(a) {return Math.round(100*a)/100;}
 
 async function animate() {
 	stats.begin();
+	controls.autoRotate = !document.getElementById("enabled").checked
 	eel.set_network("enabled", document.getElementById("enabled").checked)
 	thrusters = await eel.get_motors()();
 	let results = await eel.get_movement()();
