@@ -35,6 +35,13 @@ def get_sim_camera():
     except AttributeError:
         return None
 
+def set_leds(buffer):
+    try:
+        eel.set_leds(buffer);
+        return True
+    except AttributeError:
+        return False
+
 def main():
     print('started eel websim')
     eel.init('websim')

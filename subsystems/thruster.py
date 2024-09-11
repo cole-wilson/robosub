@@ -92,7 +92,7 @@ def solve_motion(motors, Fx, Fy, Fz, Rx, Ry, Rz, limit=True):
     try:
         sol = minimize(fun, np.zeros(n), method='L-BFGS-B', bounds=[(i.get_speed_bounds() if limit else (None, None)) for i in motors])
     except ValueError as e:
-        print(e)
+        # print(e)
         # raise e
         sol = {"x":[0,0,0,0,0,0]}
     np_radii = sol['x']
