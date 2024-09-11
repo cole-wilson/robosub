@@ -31,17 +31,46 @@ def loop():
     leds.set_leds(0, 255, 0)
     set_movement(get_movement(motors)) # keep for sim to work
 
-    # get joystick axis:
-    speed = controller.getAxis(1)
-    m1.set_speed(speed * -5)
+    grav = 2
 
-    print("Yaw is:", imu.get_yaw())
+    y_speed = -5 * controller.getAxis(3)
+    x_speed = 5 * controller.getAxis(2)
+    z_speed = -5 * controller.getAxis(1)
+    yaw_speed = -1 * controller.getAxis(0)
 
-    # solve for 6 motors speeds:
-    # speeds = solve_motion(motors, Fx, Fy, Fz, Rx, Ry, Rz)
 
-    # read a capture/image from the camera
-    # ret, cap = camera.read()
+    pool_oriented_speeds = [x_speed, y_speed, z_speed]
+    rotation = Rotation.from_euler("ZYX",[0, -imu.get_roll(), -imu.get_pitch()])
+    x_speed, y_speed, z_speed = rotation.apply(pool_oriented_speeds)
+    # z_speed -= imu.get_accel_z()
+    # print(imu.get_accel_z())
+    # yaw_speed = 5 * controller.getAxis(2)
+
+    pitch_speed = 0
+    if controller.getButton(12):
+        pitch_speed = 1
+    elif controller.getButton(13):
+        pitch_speed = -1
+
+    roll_speed = 0
+    if controller.getButton(14):
+        roll_speed = -1
+    elif controller.getButton(15):
+        roll_speed = 1
+
+    # yaw_speed = 0
+    # if controller.getButton(5):
+    #     yaw_speed = 1
+    # elif controller.getButton(4):
+    #     yaw_speed = -1
+
+
+
+    # print(x_speed, y_speed, z_speed, pitch_speed, roll_speed, yaw_speed)
+    motor_speeds = solve_motion(motors, x_speed, y_speed, z_speed, pitch_speed, roll_speed, yaw_speed)["speeds"]
+
+    for motor, speed in zip(motors, motor_speeds):
+        motor.set_speed(speed)
 
 # every couple milliseconds when disabled
 def disabled():
