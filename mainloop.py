@@ -39,6 +39,8 @@ def loop():
     yaw_speed = -1 * controller.getAxis(0)
 
 
+    # hello brady
+
     pool_oriented_speeds = [x_speed, y_speed, z_speed]
     rotation = Rotation.from_euler("ZYX",[0, -imu.get_roll(), -imu.get_pitch()])
     x_speed, y_speed, z_speed = rotation.apply(pool_oriented_speeds)
