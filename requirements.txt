@@ -2,3 +2,4 @@ scipy
 opencv-python
 numpy
 eel
+pillow
