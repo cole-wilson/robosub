@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+document.getElementById("pov").value = localStorage.getItem("povmode") || "orbit"
+
 var stats = new Stats();
 stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
 stats.dom.id="stats"
@@ -20,7 +22,8 @@ const controls = new OrbitControls( camera, renderer.domElement );
 window.controls = controls
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
-const camcamera = new THREE.PerspectiveCamera( 75, 1, 0.1, 1000 );
+const camcamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const followcamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const camrenderer = new THREE.WebGLRenderer({preserveDrawingBuffer: true});
 camrenderer.setSize( 100, 100 );
 document.body.appendChild( camrenderer.domElement );
@@ -29,6 +32,7 @@ camcanvas.id = "camcam";
 const oloader = new GLTFLoader();
 function loadSub() { return new Promise((resolve, reject) => {oloader.load( './dirtybubble.glb', function ( gltf ) {resolve( gltf.scene );}, undefined, function ( error ) {reject( error );} );});}
 function loadProp() { return new Promise((resolve, reject) => {oloader.load( './prop.glb', function ( gltf ) {resolve( gltf.scene );}, undefined, function ( error ) {reject( error );} );});}
+function loadPool() { return new Promise((resolve, reject) => {oloader.load( './pool.glb', function ( gltf ) {resolve( gltf.scene );}, undefined, function ( error ) {reject( error );} );});}
 
 const ledcanvas = document.createElement("canvas");
 ledcanvas.id="leds";
@@ -46,6 +50,13 @@ note.rotateX(Math.PI/4);
 note.position.x = -5;
 note.position.y = 15;
 note.translateZ(1);
+
+// const pool = await loadPool();
+// pool.rotation.x = Math.PI/2;
+// pool.position.x = 20;
+// pool.position.y = 20;
+// pool.position.z = 2;
+// scene.add(pool);
 
 const sub = await loadSub();
 var bbox = new THREE.Box3().setFromObject(sub);
@@ -77,12 +88,15 @@ directionalLight2.rotateX(Math.PI);
 scene.add( directionalLight2 );
 
 const loader = new THREE.TextureLoader();
-const texture = loader.load( '/floor.jpg' );
-texture.colorSpace = THREE.SRGBColorSpace;
-texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-texture.repeat.set(1000, 1000);
-
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000, 1, 1),new THREE.MeshBasicMaterial({map: texture}));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000, 1, 1),new THREE.MeshBasicMaterial());
+async function loadFloor() {
+	const texture = loader.load( '/floor.jpg' );
+	texture.colorSpace = THREE.SRGBColorSpace;
+	texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+	texture.repeat.set(1000, 1000);
+	ground.material.map = texture
+}
+loadFloor();
 ground.position.z = -2;
 ground.receiveShadow = true;
 scene.add( ground );
@@ -138,14 +152,19 @@ function r(a) {return Math.round(100*a)/100;}
 
 async function animate() {
 	stats.begin();
+
+	let povmode = document.getElementById("pov").value;
+	localStorage.setItem("povmode", povmode)
+
 	controls.autoRotate = !document.getElementById("enabled").checked
+	controls.enabled = povmode == "orbit";
 	eel.set_network("enabled", document.getElementById("enabled").checked)
 	thrusters = await eel.get_motors()();
 	let results = await eel.get_movement()();
 
 	speedx = results[0] * Force_M * (1/60);
 	speedy = results[1] * Force_M * (1/60);
-	speedz = (results[2] + get_gravbouyancy()) * Force_M * (1/60);
+	speedz = (results[2]) * Force_M * (1/60);
 
 	rotspeedx = results[3] * Torque_M * (1/60);
 	rotspeedy = results[4] * Torque_M * (1/60);
@@ -182,6 +201,7 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 	cube.translateX(speedx);
 	cube.translateY(speedy);
 	cube.translateZ(speedz);
+	cube.position.z += get_gravbouyancy() * Force_M * (1/60);
 
 	controls.target = cube.position;
 	camera.position.x -= prevcubepos.x - cube.position.x;
@@ -200,8 +220,20 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 	camcamera.rotateX(Math.PI/2);
 	camcamera.position.copy(cube.position).add(v1);
 
+	followcamera.rotation.reorder("ZXY")
+	followcamera.rotation.y = 0;
+	followcamera.rotation.z = cube.rotation.z;
+	followcamera.rotation.x = (90/180) * Math.PI;
+	followcamera.position.x = cube.position.x - (5 * Math.sin(-cube.rotation.z));
+	followcamera.position.y = cube.position.y - (5 * Math.cos(cube.rotation.z));
+	followcamera.position.z = cube.position.z + 2;
+
 	controls.update();
-	renderer.render( scene, camera );
+
+	if (povmode == "orbit") {renderer.render( scene, camera );}
+	else if (povmode == "follow") {renderer.render(scene, followcamera)}
+	else if (povmode == "fpv") {renderer.render(scene, camcamera)}
+
 	camrenderer.render( scene, camcamera );
 
 	ledctx.clearRect(0,0,ledcanvas.width,ledcanvas.height);
@@ -333,3 +365,7 @@ eel.expose(set_leds);
 function set_leds(buffer) {
 	ledbuffer = buffer;
 }
+// window.onkeydown = (e) => {
+// 	e.preventDefault();
+// 	camcanvas.focus();
+// }

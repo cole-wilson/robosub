@@ -9,7 +9,9 @@ from scipy.spatial.transform import Rotation
 controller = Controller()
 imu = IMU()
 camera = Camera()
+print(333)
 leds = LEDS(128)
+print(111)
 
 #              (X,    Y,    Z)      (yaw, pitch)      min/max thrust
 m1 = Thruster(-1.0, -1.0, -0.5,     -75,  00,     (-2.71, 3.48))
@@ -28,6 +30,7 @@ def setup():
 
 # every couple milliseconds when enabled
 def loop():
+    # print(1)
     leds.set_leds(0, 255, 0)
     set_movement(get_movement(motors)) # keep for sim to work
 
