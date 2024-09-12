@@ -45,8 +45,10 @@ def loop():
     # hello brady
 
     pool_oriented_speeds = [x_speed, y_speed, z_speed]
+    pool_oriented_rot_speeds = [0, 0, yaw_speed]
     rotation = Rotation.from_euler("ZYX",[0, -imu.get_roll(), -imu.get_pitch()])
     x_speed, y_speed, z_speed = rotation.apply(pool_oriented_speeds)
+    _, _, yaw_speed = rotation.apply(pool_oriented_rot_speeds)
     # z_speed -= imu.get_accel_z()
     # print(imu.get_accel_z())
     # yaw_speed = 5 * controller.getAxis(2)
