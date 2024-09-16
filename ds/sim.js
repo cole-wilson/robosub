@@ -11,7 +11,6 @@ document.body.appendChild( stats.dom );
 
 let info = document.getElementById("info");
 const VECTOR_SCALE = 1;
-var ledbuffer = [];
 let thrusters;
 window.THREE = THREE
 const scene = new THREE.Scene();
@@ -158,9 +157,9 @@ async function animate() {
 
 	controls.autoRotate = !document.getElementById("enabled").checked
 	controls.enabled = povmode == "orbit";
-	eel.set_network("enabled", document.getElementById("enabled").checked)
-	thrusters = await eel.get_motors()();
-	let results = await eel.get_movement()();
+	network["enabled"] = document.getElementById("enabled").checked
+	thrusters = network["Sim/Motors"];
+	let results = network["Movement"];
 
 	speedx = results[0] * Force_M * (1/60);
 	speedy = results[1] * Force_M * (1/60);
@@ -208,12 +207,12 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 	camera.position.y -= prevcubepos.y - cube.position.y;
 	camera.position.z -= prevcubepos.z - cube.position.z;
 
-	eel.set_network("IMU/pitch", cube.rotation.x);
-	eel.set_network("IMU/roll", cube.rotation.y);
-	eel.set_network("IMU/yaw", cube.rotation.z);
-	eel.set_network("IMU/accel_x", results[0]);
-	eel.set_network("IMU/accel_y", results[1]);
-	eel.set_network("IMU/accel_z", results[2]);
+	network["IMU/pitch"]= cube.rotation.x;
+	network["IMU/roll"]= cube.rotation.y;
+	network["IMU/yaw"]= cube.rotation.z;
+	network["IMU/accel_x"]= results[0];
+	network["IMU/accel_y"]= results[1];
+	network["IMU/accel_z"]= results[2];
 
 	const v1 = new THREE.Vector3(0, 1.08, -0.05).applyQuaternion(cube.quaternion);
 	camcamera.quaternion.copy(cube.quaternion);
@@ -236,6 +235,8 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 
 	camrenderer.render( scene, camcamera );
 
+	let ledbuffer = network["Sim/LEDs"];
+
 	ledctx.clearRect(0,0,ledcanvas.width,ledcanvas.height);
 	for (var index=0;index<ledbuffer.length;index++) {
 		let ledsize = ledcanvas.height;
@@ -248,7 +249,7 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 
 // prop/vector setup ============================================================================================
 async function main() {
-	thrusters = await eel.get_motors()();
+	thrusters = network["Sim/Motors"];
 	window.motors = thrusters;
 
 	for (var i=0;i<thrusters.length;i++) {
@@ -291,63 +292,13 @@ async function main() {
 	}
 
 	renderer.setAnimationLoop( animate );
+	setcanvascamdata();
 }
 main();
 
-
-// gamepads =================================================================================
-joypad.set({
-	axisMovementThreshold: 0.0,
-});
-joypad.on('button_press', (e) => {
-	eel.set_network("Controller/Button"+e.detail.index, true);
-});
-joypad.on('button_release', (e) => {
-	eel.set_network("Controller/Button"+e.detail.index, false);
-});
-joypad.on('axis_move', (e) => {
-	let axes = e.detail.gamepad.axes;
-	for (var i=0;i<axes.length;i++) {
-		console.log(axes[i])
-		if (axes[i] < 0.1 && axes[i] > -0.1)
-			eel.set_network("Controller/Axis"+i, 0);
-		else
-			eel.set_network("Controller/Axis"+i, axes[i]);
-	}
-});
-let nums = ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', 'i', 'k', 'j', 'l'];
-window.onkeydown = (e) => {
-	let index = nums.indexOf(e.key);
-	if (index > -1) eel.set_network("Controller/Button"+index, true);
-	else {
-		if (e.key == 'a') eel.set_network("Controller/Axis2", -1);
-		else if (e.key == 'd') eel.set_network("Controller/Axis2", 1);
-		else if (e.key == 'w') eel.set_network("Controller/Axis3", -1);
-		else if (e.key == 's') eel.set_network("Controller/Axis3", 1);
-		else if (e.key == 'ArrowLeft') eel.set_network("Controller/Axis0", -1);
-		else if (e.key == 'ArrowRight') eel.set_network("Controller/Axis0", 1);
-		else if (e.key == 'ArrowDown') eel.set_network("Controller/Axis1", 1);
-		else if (e.key == 'ArrowUp') eel.set_network("Controller/Axis1", -1);
-	}
-}
-window.onkeyup = (e) => {
-	let index = nums.indexOf(e.key);
-	if (index > -1) eel.set_network("Controller/Button"+index, false);
-	else {
-		if (e.key == 'a') eel.set_network("Controller/Axis2", 0);
-		else if (e.key == 'd') eel.set_network("Controller/Axis2", 0);
-		else if (e.key == 'w') eel.set_network("Controller/Axis3", 0);
-		else if (e.key == 's') eel.set_network("Controller/Axis3", 0);
-		else if (e.key == 'ArrowLeft') eel.set_network("Controller/Axis0", 0);
-		else if (e.key == 'ArrowRight') eel.set_network("Controller/Axis0", 0);
-		else if (e.key == 'ArrowDown') eel.set_network("Controller/Axis1", 0);
-		else if (e.key == 'ArrowUp') eel.set_network("Controller/Axis1", 0);
-	}
-}
-
 // sim camera =================================================================================
-eel.expose(getcanvasdata);
-function getcanvasdata() {
+function setcanvascamdata() {
+	if (!network["Sim/CameraRequest"]) {return}
 	var webglCanvas = camcanvas;
 
 	var offscreenCanvas = document.createElement("canvas");
@@ -359,11 +310,8 @@ function getcanvasdata() {
 	var imageData = ctx.getImageData(0,0, offscreenCanvas.width, offscreenCanvas.height).data;
 	var out = Array.from(imageData);
 	// console.log(imageData)
-	return out;
-}
-eel.expose(set_leds);
-function set_leds(buffer) {
-	ledbuffer = buffer;
+	network["Sim/Camera"] = out
+	network["Sim/CameraRequest"] = false
 }
 // window.onkeydown = (e) => {
 // 	e.preventDefault();

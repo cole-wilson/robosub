@@ -17,7 +17,8 @@ def main(_):
     mainloop.setup()
     while True:
         if comthread.is_alive():
-
+            communication.network.heartbeat = time.time()
+            # print(communication.network, end="\n\n")
             if communication.network["enabled"]:
                 mainloop.loop()
             else:

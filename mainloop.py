@@ -5,6 +5,7 @@ from subsystems.camera import Camera
 from subsystems.thruster import Thruster, get_movement, solve_motion
 from simulation import expose_motors, set_movement
 from scipy.spatial.transform import Rotation
+import time
 
 controller = Controller()
 imu = IMU()
@@ -30,6 +31,7 @@ def setup():
 
 # every couple milliseconds when enabled
 def loop():
+    # network["test"] = time.time()
     # print(1)
     leds.set_leds(0, 255, 0)
     set_movement(get_movement(motors)) # keep for sim to work
