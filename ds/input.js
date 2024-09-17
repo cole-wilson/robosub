@@ -1,4 +1,3 @@
-
 // gamepads =================================================================================
 joypad.set({
 	axisMovementThreshold: 0.0,
@@ -20,7 +19,7 @@ joypad.on('axis_move', (e) => {
 	}
 });
 let nums = ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', 'i', 'k', 'j', 'l'];
-window.onkeydown = (e) => {
+function inputKeyDown(e) {
 	let index = nums.indexOf(e.key);
 	if (index > -1) network["Controller/Button"+index]=true;
 	else {
@@ -32,9 +31,10 @@ window.onkeydown = (e) => {
 		else if (e.key == 'ArrowRight') network["Controller/Axis0"]= 1;
 		else if (e.key == 'ArrowDown') network["Controller/Axis1"]= 1;
 		else if (e.key == 'ArrowUp') network["Controller/Axis1"]= -1;
+		else if (e.key == 'Return' || e.key == 'Enter') setEnabled(false);
 	}
 }
-window.onkeyup = (e) => {
+function inputKeyUp(e) {
 	let index = nums.indexOf(e.key);
 	if (index > -1) network["Controller/Button"+index] =false;
 	else {
@@ -48,3 +48,5 @@ window.onkeyup = (e) => {
 		else if (e.key == 'ArrowUp') network["Controller/Axis1"]= 0;
 	}
 }
+window.onkeydown = inputKeyDown;
+window.onkeyup = inputKeyUp;

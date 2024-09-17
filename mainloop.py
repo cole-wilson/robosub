@@ -10,9 +10,9 @@ import time
 controller = Controller()
 imu = IMU()
 camera = Camera()
-print(333)
+# print(333)
 leds = LEDS(128)
-print(111)
+# print(111)
 
 #              (X,    Y,    Z)      (yaw, pitch)      min/max thrust
 m1 = Thruster(-1.0, -1.0, -0.5,     -75,  00,     (-2.71, 3.48))
@@ -28,11 +28,13 @@ motors = [m1, m2, m3, m4, m5, m6]
 def setup():
     # keep next line for simulation
     expose_motors(m1, m2, m3, m4, m5, m6)
+    set_movement([0,0,0,0,0,0])
 
 # every couple milliseconds when enabled
 def loop():
+    expose_motors(m1, m2, m3, m4, m5, m6)
     # network["test"] = time.time()
-    # print(1)
+    # print(time.time())
     leds.set_leds(0, 255, 0)
     set_movement(get_movement(motors)) # keep for sim to work
 
@@ -48,9 +50,9 @@ def loop():
 
     pool_oriented_speeds = [x_speed, y_speed, z_speed]
     pool_oriented_rot_speeds = [0, 0, yaw_speed]
-    rotation = Rotation.from_euler("ZYX",[0, -imu.get_roll(), -imu.get_pitch()])
-    x_speed, y_speed, z_speed = rotation.apply(pool_oriented_speeds)
-    _, _, yaw_speed = rotation.apply(pool_oriented_rot_speeds)
+    # rotation = Rotation.from_euler("ZYX",[0, -imu.get_roll(), -imu.get_pitch()])
+    # x_speed, y_speed, z_speed = rotation.apply(pool_oriented_speeds)
+    # _, _, yaw_speed = rotation.apply(pool_oriented_rot_speeds)
     # z_speed -= imu.get_accel_z()
     # print(imu.get_accel_z())
     # yaw_speed = 5 * controller.getAxis(2)

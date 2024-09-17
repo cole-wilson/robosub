@@ -1,10 +1,15 @@
 import json
-import websockets.sync.server
+# import websockets.sync.server
 import websockets.exceptions
-from threading import Lock
+import websockets.asyncio.server
+import asyncio
+from threading import Lock, Thread
+from queue import Empty, Queue
 
 tosend = {"values":{}}
 tosendlock = Lock()
+
+stdoutQueue = Queue()
 
 class NetworkData():
     __data = {}
@@ -44,39 +49,48 @@ network = NetworkData()
 
 
 
-def handler(conn):
+async def handler(conn):
+    print('new connection')
     try:
-        conn.send(json.dumps(network.getdata()))
+        await conn.send(json.dumps(network.getdata()))
         while True:
             # fetch any new data from the driverstation
             try:
-                # print('fetching remote')
-                data = conn.recv(timeout=0.05)
-                # print(data)
-                json_strings = data.replace('}{', '}|{').split('|')
+                async with asyncio.timeout(0.05):
+                    # print('fetching remote')
+                    data = await conn.recv()
+                    # print(data)
+                    json_strings = data.replace('}{', '}|{').split('|')
 
-                try:
-                    for k, v in json.loads(json_strings[-1]).items():
-                        network.__setattr__(k, v, True)
-                except json.JSONDecodeError:
-                    print(data)
-                    pass
+                    try:
+                        for k, v in json.loads(json_strings[-1]).items():
+                            network.__setattr__(k, v, True)
+                    except json.JSONDecodeError:
+                        print(data)
+                        pass
             except TimeoutError:
-                # print('pass fetch')
                 pass
 
             # send any new data to the driverstation
             # print('sending from tosend')
             tosendlock.acquire()
-            conn.send(json.dumps(tosend["values"]))
+            await conn.send(json.dumps(tosend["values"]))
             tosend["values"] = {}
             tosendlock.release()
-    except (websockets.exceptions.ConnectionClosed, websockets.exceptions.ConnectionClosedError, websockets.exceptions.ConnectionClosedOK):
+
+            try:
+                await conn.send(json.dumps({"__stdout":stdoutQueue.get(block=False)}))
+            except Empty:
+                pass
+
+    except (websockets.exceptions.ConnectionClosed, websockets.exceptions.ConnectionClosedError, websockets.exceptions.ConnectionClosedOK, ConnectionResetError) as e:
+        # raise e
         network.enabled = False
         print('client ended connection')
 
 def listen(host, port):
-    global network
+    async def main():
+        async with websockets.asyncio.server.serve(handler, host, port):
+            await asyncio.get_running_loop().create_future()  # run forever
 
-    with websockets.sync.server.serve(handler, host=host, port=port) as server:
-        server.serve_forever()
+    asyncio.run(main())

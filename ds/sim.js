@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 document.getElementById("pov").value = localStorage.getItem("povmode") || "orbit"
 
+
 var stats = new Stats();
 stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
 stats.dom.id="stats"
@@ -59,7 +60,7 @@ note.translateZ(1);
 
 const sub = await loadSub();
 var bbox = new THREE.Box3().setFromObject(sub);
-console.log(bbox)
+// console.log(bbox)
 const prop = await loadProp();
 sub.scale.x = 8;
 sub.scale.y = 8;
@@ -155,9 +156,9 @@ async function animate() {
 	let povmode = document.getElementById("pov").value;
 	localStorage.setItem("povmode", povmode)
 
-	controls.autoRotate = !document.getElementById("enabled").checked
+	controls.autoRotate = network.enabled;
 	controls.enabled = povmode == "orbit";
-	network["enabled"] = document.getElementById("enabled").checked
+	// network["enabled"] = document.getElementById("enabled").checked
 	thrusters = network["Sim/Motors"];
 	let results = network["Movement"];
 

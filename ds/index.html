@@ -4,13 +4,52 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width">
 		<title>robosub ds</title>
-		<link rel="stylesheet" href="/style.css">
+		<link rel="stylesheet" href="/ds.css">
 	</head>
 	<body>
-		...
+		<main>
+			<section id="dashboard">
+				<select v-model="dashboardtype" id="dashboardview">
+					<option>dashboard</option>
+					<option>simulation</option>
+					<option>networktable</option>
+					<option>joysticks</option>
+					<option>camera</option>
+				</select>
+				<div id='dashboardpanel'>
+					dashboard
+				</div>
+				<div id='simulation'>
+					<iframe id="sim" src="sim.html"></iframe>
+				</div>
+				<div id='networktable'>
+					{{network}}
+				</div>
+				<div id='joysticks'>
+					joysticks
+				</div>
+				<div id='camera'>
+					<video controls></video>
+				</div>
+			</section>
+			<section id="controls">
+				<div id="cominfo">
+					{{network.enabled}}
+				</div>
+				<div id="enabler">
+					<button id="enable" onclick="setEnabled(true)">ENABLE</button>
+					<button id="disable" onclick="setEnabled(false)">DISABLE</button>
+				</div>
+				<textarea readonly id="log">
+
+				</textarea>
+			</section>
+		</main>
+
+		<script src="vue.js"></script>
 		<script src="joypad.min.js"></script>
-		<script src="input.js"></script>
 		<script src="coms.js"></script>
-		<script type="module" src="main.js"></script>
+		<script src="main.js"></script>
+		<script src="input.js"></script>
 	</body>
 </html>

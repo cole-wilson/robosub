@@ -4,7 +4,7 @@ import http.server
 import socketserver
 import webbrowser
 import os
-
+from threading import Thread
 
 def is_simulated():
     return socket.gethostname() != "dirty-bubble"
@@ -29,16 +29,19 @@ def set_leds(buffer):
     except AttributeError:
         return False
 
-def main():
+def ge_ds_thread():
     PORT = 8080
 
     os.chdir("ds")
     handler = http.server.SimpleHTTPRequestHandler
     handler.log_message = lambda *i: 1
 
-    with socketserver.TCPServer(("", PORT), handler) as httpd:
-        httpd.allow_reuse_address = True
-        print("serving ds...", PORT)
-        if is_simulated():
-            webbrowser.open("http://localhost:8080/sim.html")
-        httpd.serve_forever()
+    server = socketserver.TCPServer
+
+    server.allow_reuse_address = True
+    server.allow_reuse_port = True
+
+    httpd = server(("", PORT), handler)
+    httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    print("serving DS server on port", PORT)
+    return Thread(target=httpd.serve_forever, daemon=True)

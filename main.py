@@ -4,14 +4,25 @@ import simulation
 import communication
 import threading
 import time
+import webbrowser
+import contextlib
+
+class TeeIO:
+    def __init__(self, original):
+        self.original = original
+
+    def write(self, value):
+        self.original.write(value)
+        self.original.flush()
+        communication.stdoutQueue.put(value)
 
 def main(_):
     comthread = threading.Thread(target=communication.listen, args=['', 20001], daemon=True)
     comthread.start()
 
-    if simulation.is_simulated():
-        simthread = threading.Thread(target=simulation.main, daemon=True)
-        simthread.start()
+    # if simulation.is_simulated():
+    simulation.ge_ds_thread().start()
+    webbrowser.open("http://localhost:8080")
 
     print('mainloop has started...')
     mainloop.setup()
@@ -29,7 +40,8 @@ def main(_):
 
 if __name__ == "__main__":
     try:
-        main(sys.argv)
+        with contextlib.redirect_stdout(TeeIO(sys.stdout)):
+            main(sys.argv)
     except (Exception, KeyboardInterrupt) as e:
         print('...mainloop has ended', e)
         raise e

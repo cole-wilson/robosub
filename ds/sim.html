@@ -7,14 +7,15 @@
 		<link rel="stylesheet" href="/style.css">
 	</head>
 	<body>
-		<div id="g"><input id="gravity" type="checkbox">gravity/bouyancy ?<br>
-			<input id="enabled" type="checkbox" checked>ENABLED???<br>
-			View POV: <select id="pov">
+		<div id="g">
+			<input style="display:none" id="gravity" type="checkbox">
+			<!-- <input id="enabled" type="checkbox" checked>ENABLED???<br> -->
+			<select id="pov">
 				<option>follow</option>
 				<option selected>orbit</option>
 				<option>fpv</option>
 			</select><br>
-			<span id="info"></span></div>
+			<span style="display:none"id="info"></span></div>
 		<script src="https://mrdoob.github.io/stats.js/build/stats.min.js"></script>
 		<script type="importmap">
   {
@@ -25,7 +26,12 @@
   }
 </script>
 		<script src="joypad.min.js"></script>
-		<script src="input.js"></script>
+		<script>
+function logOutput(a) {}
+window.logOutput = logOutput
+
+</script>
+		<!-- <script src="input.js"></script> -->
 		<script src="coms.js"></script>
 		<script type="module" src="sim.js"></script>
 	</body>
