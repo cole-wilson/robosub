@@ -1,5 +1,5 @@
 scipy
 opencv-python
 numpy
-eel
+websockets
 pillow

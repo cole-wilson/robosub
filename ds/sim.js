@@ -5,11 +5,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 document.getElementById("pov").value = localStorage.getItem("povmode") || "orbit"
 
 
-var stats = new Stats();
-stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-stats.dom.id="stats"
-document.body.appendChild( stats.dom );
+// var stats = new Stats();
+// stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+// stats.dom.id="stats"
+// document.body.appendChild( stats.dom );
 
+async function gosim(sd) {
 let info = document.getElementById("info");
 const VECTOR_SCALE = 1;
 let thrusters;
@@ -151,7 +152,7 @@ function get_gravbouyancy() {
 function r(a) {return Math.round(100*a)/100;}
 
 async function animate() {
-	stats.begin();
+	// stats.begin();
 
 	let povmode = document.getElementById("pov").value;
 	localStorage.setItem("povmode", povmode)
@@ -208,12 +209,14 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 	camera.position.y -= prevcubepos.y - cube.position.y;
 	camera.position.z -= prevcubepos.z - cube.position.z;
 
-	network["IMU/pitch"]= cube.rotation.x;
-	network["IMU/roll"]= cube.rotation.y;
-	network["IMU/yaw"]= cube.rotation.z;
-	network["IMU/accel_x"]= results[0];
-	network["IMU/accel_y"]= results[1];
-	network["IMU/accel_z"]= results[2];
+	if (network.Simulated) {
+		network["IMU/pitch"]= cube.rotation.x;
+		network["IMU/roll"]= cube.rotation.y;
+		network["IMU/yaw"]= cube.rotation.z;
+		network["IMU/accel_x"]= results[0];
+		network["IMU/accel_y"]= results[1];
+		network["IMU/accel_z"]= results[2];
+	}
 
 	const v1 = new THREE.Vector3(0, 1.08, -0.05).applyQuaternion(cube.quaternion);
 	camcamera.quaternion.copy(cube.quaternion);
@@ -238,13 +241,15 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 
 	let ledbuffer = network["Sim/LEDs"];
 
-	ledctx.clearRect(0,0,ledcanvas.width,ledcanvas.height);
-	for (var index=0;index<ledbuffer.length;index++) {
-		let ledsize = ledcanvas.height;
-		ledctx.fillStyle = `rgba(${ledbuffer[index]})`;
-		ledctx.fillRect(index*(ledsize+2), 0, ledsize, ledsize);
+	if (ledbuffer) {
+		ledctx.clearRect(0,0,ledcanvas.width,ledcanvas.height);
+		for (var index=0;index<ledbuffer.length;index++) {
+			let ledsize = ledcanvas.height;
+			ledctx.fillStyle = `rgba(${ledbuffer[index]})`;
+			ledctx.fillRect(index*(ledsize+2), 0, ledsize, ledsize);
+		}
 	}
-	stats.end()
+	// stats.end()
 }
 
 
@@ -318,3 +323,5 @@ function setcanvascamdata() {
 // 	e.preventDefault();
 // 	camcanvas.focus();
 // }
+}
+gosim(123)

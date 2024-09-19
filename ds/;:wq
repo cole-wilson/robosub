@@ -2,7 +2,7 @@ const WS_URL = "ws://"+location.hostname+":20001";
 
 var WS = new WebSocket(WS_URL);
 
-var tosend = {};
+var toset = {};
 
 function reconnect() {
 	setTimeout(() => {
@@ -10,7 +10,7 @@ function reconnect() {
 		// WS.onerror = console.error
 	}, 1000)
 }
-WS.onclose = alert
+WS.onclose = reconnect
 
 	WS.onmessage = (d) => {
 		let obj = JSON.parse(d.data);
@@ -32,7 +32,7 @@ WS.onclose = alert
 			if (!name.startsWith("__noset__")) {
 				let obj = {};
 				obj[name] = value;
-				tosend[name] = value;
+				toset[name] = value;
 			} else {
 				name = name.substring(9)
 			}
@@ -45,4 +45,4 @@ WS.onclose = alert
 setInterval(()=>{
 	WS.send(JSON.stringify(tosend));
 	tosend = {};
-}, 20)
+}, 100)

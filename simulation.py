@@ -34,7 +34,7 @@ def ge_ds_thread():
 
     os.chdir("ds")
     handler = http.server.SimpleHTTPRequestHandler
-    handler.log_message = lambda *i: 1
+    handler.log_message = lambda *_:True
 
     server = socketserver.TCPServer
 

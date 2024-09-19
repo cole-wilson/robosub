@@ -31,7 +31,8 @@ function inputKeyDown(e) {
 		else if (e.key == 'ArrowRight') network["Controller/Axis0"]= 1;
 		else if (e.key == 'ArrowDown') network["Controller/Axis1"]= 1;
 		else if (e.key == 'ArrowUp') network["Controller/Axis1"]= -1;
-		else if (e.key == 'Return' || e.key == 'Enter') setEnabled(false);
+		else if (e.key == 'Return' || e.key == 'Enter' ||  e.key == ' ' || e.key == 'Space') setEnabled(false);
+		else if (e.key == '\\' || e.key == ']') setEnabled(true);
 	}
 }
 function inputKeyUp(e) {

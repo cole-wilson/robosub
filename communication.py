@@ -54,16 +54,19 @@ async def handler(conn):
     try:
         await conn.send(json.dumps(network.getdata()))
         while True:
+            # data = await conn.recv()
+            # print(data)
             # fetch any new data from the driverstation
             try:
                 async with asyncio.timeout(0.05):
                     # print('fetching remote')
                     data = await conn.recv()
                     # print(data)
-                    json_strings = data.replace('}{', '}|{').split('|')
+                    # json_strings = data#.replace('}{', '}|{').split('|')
 
                     try:
-                        for k, v in json.loads(json_strings[-1]).items():
+                        for k, v in json.loads(data).items():
+                            # print(k, v)
                             network.__setattr__(k, v, True)
                     except json.JSONDecodeError:
                         print(data)
@@ -85,8 +88,10 @@ async def handler(conn):
 
     except (websockets.exceptions.ConnectionClosed, websockets.exceptions.ConnectionClosedError, websockets.exceptions.ConnectionClosedOK, ConnectionResetError) as e:
         # raise e
+        print(e)
+        tosendlock.release()
         network.enabled = False
-        print('client ended connection')
+        # print('client ended connection')
 
 def listen(host, port):
     async def main():

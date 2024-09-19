@@ -3,3 +3,13 @@ __pycache__/*
 __pycache__
 __pycache__/
 log.txt
+node_modules
+node_modules/
+node_modules/*
+package-lock.json
+ds/dist
+ds/dist/*
+ds/dist/
+ds/.parcel-cache
+ds/.parcel-cache/*
+ds/.parcel-cache/

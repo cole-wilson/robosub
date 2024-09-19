@@ -1,24 +1,44 @@
 import numpy as np
 from math import sin, cos, tan, radians
 from scipy.optimize import minimize
+import time
+import functools
 
+import simulation
 
+# if not simulation.is_simulated():
+#     import RPi.GPIO as GPIO
+#     GPIO.setwarnings(False)
+#     GPIO.setmode(GPIO.BCM)
 
 np.set_printoptions(precision=3, suppress=True)
 
 def in_to_ft(x):
     return (1/12.0) * x
 
+# def calculate_duty_cycle(pulse_width, frequency):
+    # return (pulse_width / (1/))
+
 class Thruster():
     speed = 0
+    pwm = None
 
-    def __init__(self, x, y, z, theta, phi, speed_bounds = (-0.7, 1), pin=None):
+    def __init__(self, x, y, z, theta, phi, speed_bounds = (-0.7, 1), pin=None, freq=400):
+        if pin and not simulation.is_simulated():
+            GPIO.setup(pin, GPIO.OUT)
+            self.pwm = GPIO.PWM(pin, 400)
+            self.pwm.start(60)
+            time.sleep(0.3)
         self.x = x
         self.y = y
         self.z = z
         self.phi = phi
         self.theta = theta
         self.speedbound_reverse, self.speedbound_forward = speed_bounds
+
+    def stop(self):
+        if self.pwm:
+            self.pwm.stop()
 
     def get_force_coefficients(self):
         p = radians(90-self.phi)
@@ -39,6 +59,18 @@ class Thruster():
 
     def set_speed(self, speed):
         self.speed = speed
+        throttle = 0
+        if self.pwm:
+            if speed < 0:
+                throttle = -speed/self.speedbound_reverse
+            else:
+                throttle = speed/self.speedbound_forward
+            output = 60 + (16 * throttle)
+            # print(output)
+            # self.pwm.ChangeDutyCycle(output)
+
+        # self
+        # self.pwm.ChangeDutyCycle()
 
     def get_moment_coefficients(self):
         p = radians(90-self.phi)
@@ -76,7 +108,9 @@ class Thruster():
         }
 
 
+@functools.cache
 def solve_motion(motors, Fx, Fy, Fz, Rx, Ry, Rz, limit=True):
+    # print('@@@@@@@@@@@@@@@@@@@@@@')
     coefficients = []
     for motor in motors:
         coefficients.append(motor.get_force_coefficients() + motor.get_moment_coefficients())
@@ -87,15 +121,18 @@ def solve_motion(motors, Fx, Fy, Fz, Rx, Ry, Rz, limit=True):
     n = len(b)
 
 
-    # np_radii = np.linalg.lstsq(A, b, rcond=None)[0]
+    time_a = time.time()
+    np_radii = np.linalg.lstsq(A, b, rcond=None)[0]
     fun = lambda x: np.linalg.norm(np.dot(A,x)-b)
-    try:
-        sol = minimize(fun, np.zeros(n), method='L-BFGS-B', bounds=[(i.get_speed_bounds() if limit else (None, None)) for i in motors])
-    except ValueError as e:
+    time_b = time.time()
+    # try:
+        # sol = minimize(fun, np.zeros(n), method='L-BFGS-B', bounds=[(i.get_speed_bounds() if limit else (None, None)) for i in motors])
+    # except ValueError as e:
         # print(e)
         # raise e
-        sol = {"x":[0,0,0,0,0,0]}
-    np_radii = sol['x']
+        # sol = {"x":[0,0,0,0,0,0]}
+    # print(time.time()-time_b, time_b- time_a)
+    # np_radii = sol['x']
 
     rA = np_radii * A
 

@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@parcel/config-default": "^2.12.0",
+    "three": "^0.168.0"
+  },
+  "targets":{
+	  "main":{"optimize":false},
+	  "module":{"optimize":false}
+  },
+  "devDependencies": {
+    "parcel-reporter-static-files-copy": "^1.5.3"
+  }
+}
