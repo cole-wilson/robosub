@@ -6,10 +6,10 @@ import functools
 
 import simulation
 
-# if not simulation.is_simulated():
-#     import RPi.GPIO as GPIO
-#     GPIO.setwarnings(False)
-#     GPIO.setmode(GPIO.BCM)
+if not simulation.is_simulated():
+    import RPi.GPIO as GPIO
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
 
 np.set_printoptions(precision=3, suppress=True)
 
@@ -65,9 +65,9 @@ class Thruster():
                 throttle = -speed/self.speedbound_reverse
             else:
                 throttle = speed/self.speedbound_forward
-            output = 60 + (16 * throttle)
+            output = 50 + (50 * throttle)
             # print(output)
-            # self.pwm.ChangeDutyCycle(output)
+            self.pwm.ChangeDutyCycle(max(min(output, 100), 0))
 
         # self
         # self.pwm.ChangeDutyCycle()

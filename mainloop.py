@@ -13,7 +13,7 @@ camera = Camera()
 leds = LEDS(24)
 
 #              (X,    Y,    Z)      (yaw, pitch)      min/max thrust
-m1 = Thruster(-1.0, -1.0, -0.5,     -75,  00,     (-2.71, 3.48))
+m1 = Thruster(-1.0, -1.0, -0.5,     -75,  00,     (-1, 1), 26)
 m2 = Thruster( 1.0, -1.0, -0.5,      75,  00,     (-2.71, 3.48))
 m3 = Thruster(-1.0,  0.0, -0.5,      00,  90,     (-2.71, 3.48))
 m4 = Thruster( 1.0,  0.0, -0.5,      00,  90,     (-2.71, 3.48))
@@ -30,6 +30,7 @@ def setup():
 
 # every couple milliseconds when enabled
 def loop():
+    # print(9)
     # leds.set_leds(0, 255, 0)
     expose_motors(m1, m2, m3, m4, m5, m6)
 

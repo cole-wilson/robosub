@@ -23,7 +23,7 @@ def main(_):
 
     simulation.ge_ds_thread().start()
     if simulation.is_simulated():
-        webbrowser.open("http://localhost:8080")
+        webbrowser.open("http://localhost:8000")
 
     print('mainloop has started...')
     communication.network.Simulated = simulation.is_simulated()

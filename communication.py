@@ -89,7 +89,8 @@ async def handler(conn):
     except (websockets.exceptions.ConnectionClosed, websockets.exceptions.ConnectionClosedError, websockets.exceptions.ConnectionClosedOK, ConnectionResetError) as e:
         # raise e
         print(e)
-        tosendlock.release()
+        if tosendlock.locked():
+            tosendlock.release()
         network.enabled = False
         # print('client ended connection')
 
