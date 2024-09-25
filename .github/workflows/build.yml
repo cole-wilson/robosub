@@ -2,9 +2,9 @@ name: Package Application with Pyinstaller
 # https://github.com/marketplace/actions/python-build-for-windows-pyinstaller
 on:
   push:
-    branches: [ main ]
+    branches: [ main, cole ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, cole ]
 
 jobs:
   build:
