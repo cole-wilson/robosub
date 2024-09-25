@@ -13,3 +13,9 @@ ds/dist/
 ds/.parcel-cache
 ds/.parcel-cache/*
 ds/.parcel-cache/
+build
+build/
+build/*
+dist
+dist/*
+dist/
