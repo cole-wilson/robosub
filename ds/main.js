@@ -1,5 +1,5 @@
-document.getElementById("dashboard").dataset.view = localStorage.getItem("dashboardtype") || "dashboard";
-document.getElementById("dashboardview").value = localStorage.getItem("dashboardtype") || "dashboard";
+document.getElementById("dashboard").dataset.view = localStorage.getItem("dashboardtype") || "simulation";
+document.getElementById("dashboardview").value = localStorage.getItem("dashboardtype") || "simulation";
 document.getElementById("dashboardview").onchange = (e) => {
 	document.getElementById("dashboard").dataset.view = e.target.value;
 	localStorage.setItem("dashboardtype", e.target.value)

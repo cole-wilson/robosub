@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-document.getElementById("pov").value = localStorage.getItem("povmode") || "orbit"
+document.getElementById("pov").value = localStorage.getItem("povmode") || "fpv"
 
 
 // var stats = new Stats();
@@ -42,15 +42,18 @@ ledcanvas.height = 10;
 document.body.appendChild(ledcanvas)
 const ledctx = ledcanvas.getContext("2d");
 
-const geometry = new THREE.TorusGeometry(0.4, 0.05, 16, 100);
+	for (var k=0;k<10;k++) {
+const geometry = new THREE.TorusGeometry(2, 0.2, 16, 100);
 const material = new THREE.MeshBasicMaterial( { color: "orange" } );
 const note = new THREE.Mesh( geometry, material ); scene.add( note );
 note.rotation.z=(Math.PI/4);
-note.rotateY(Math.PI/4);
-note.rotateX(Math.PI/4);
-note.position.x = -5;
-note.position.y = 15;
-note.translateZ(1);
+note.rotateY(2 * Math.PI * Math.random());
+note.rotateX(2 * Math.PI * Math.random());
+note.rotateZ(2 * Math.PI * Math.random());
+note.position.x = (100 * Math.random()) - 50;
+note.position.y = (100 * Math.random()) - 50;
+note.position.z = (10 * Math.random());
+	}
 
 // const pool = await loadPool();
 // pool.rotation.x = Math.PI/2;
@@ -60,14 +63,14 @@ note.translateZ(1);
 // scene.add(pool);
 
 const sub = await loadSub();
-var bbox = new THREE.Box3().setFromObject(sub);
-// console.log(bbox)
 const prop = await loadProp();
 sub.scale.x = 8;
 sub.scale.y = 8;
 sub.scale.z = 8;
 sub.rotation.y = Math.PI
 sub.translateY(-1);
+var bbox = new THREE.Box3().setFromObject(sub);
+console.log(bbox)
 
 let cube = new THREE.Object3D();
 window.sub = sub;
@@ -144,12 +147,12 @@ window.clear = function() {
 
 function get_gravbouyancy() {
 	if (document.getElementById("gravity").checked) {
-		return 2;
+		return 2.5;
 	} else {
 		return 0;
 	}
 }
-function r(a) {return Math.round(100*a)/100;}
+function r(a) {return Math.round(10000*a)/10000;}
 
 async function animate() {
 	// stats.begin();
@@ -173,11 +176,11 @@ async function animate() {
 
 	for (var i=0;i<thrusters.length;i++) {
 		let motor = thrusters[i];
-		if (motor.speed > 0) {
+		if (motor.speed > 0.1) {
 			vectorArrows[i].setLength(Math.max(motor.speed, 0.8) * VECTOR_SCALE);
 			vectorArrowsReverse[i].setLength(0)
 		}
-		else if (motor.speed < 0) {
+		else if (motor.speed < -0.1) {
 			vectorArrowsReverse[i].setLength(Math.max(-motor.speed, 0.8) * VECTOR_SCALE)
 			vectorArrows[i].setLength(0);
 		}
@@ -190,7 +193,7 @@ async function animate() {
 	info.innerHTML = `
 position: (${r(cube.position.x)}, ${r(cube.position.y)}, ${r(cube.position.z)})<br>
 rotation: (${r(cube.rotation.x)}, ${r(cube.rotation.y)}, ${r(cube.rotation.z)})<br>
-chassis speed: (${r(speedx)}, ${r(speedy)}, ${r(speedz)}, ${r(rotspeedx)}, ${r(rotspeedy)}, ${r(rotspeedz)})<br>
+chassis speed: (${r(results[0])}, ${r(results[1])}, ${r(results[2])}, ${r(results[3])}, ${r(results[4])}, ${r(results[5])})<br>
 thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 	`;
 
@@ -202,7 +205,7 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 	cube.translateX(speedx);
 	cube.translateY(speedy);
 	cube.translateZ(speedz);
-	cube.position.z += get_gravbouyancy() * Force_M * (1/60);
+	cube.position.z +=get_gravbouyancy() * Force_M * (1/60);
 
 	controls.target = cube.position;
 	camera.position.x -= prevcubepos.x - cube.position.x;
@@ -277,7 +280,7 @@ async function main() {
 		motorProp.position.y = motor.y;
 		motorProp.position.z = motor.z;
 		motorProp.scale.x = 8;
-		motorProp.scale.y = 8;
+		motorProp.scale.y = -8;
 		motorProp.scale.z = 8;
 
 		motorProp.rotation.reorder( 'ZYX' );

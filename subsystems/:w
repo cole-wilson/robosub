@@ -120,41 +120,35 @@ def solve_motion(motors, Fx, Fy, Fz, Rx, Ry, Rz, optimize=True, limit=True):
 
     A = np.array(coefficients).transpose()
     b = np.array([Fx, Fy, Fz, Rx, Ry, Rz])
+    # print(b)
+    n = len(b)
 
+    # bounds = ([i.speedbound_reverse for i in motors], [i.speedbound_forward for i in motors]) if limit else (-np.inf, np.inf)
+    # solutions = lsq_linear(A, b, bounds=bounds, lsq_solver="exact", method="bvls").x
+    # print(solutions)
 
-    bounds = ([i.speedbound_reverse for i in motors], [i.speedbound_forward for i in motors])
+    # time_a = time.time()
+    solutions = np.linalg.lstsq(A, b, rcond=0.0000000000000000001)[0]
+    if optimize:
+        def fun(x):
+            s = sum(np.abs(np.dot(A,x)-b))
+            print(s)
+            return s
+        time_b = time.time()
+        try:
+            sol = minimize(fun, solutions, method='L-BFGS-B', bounds=[(i.get_speed_bounds() if limit else (None, None)) for i in motors])
+        except ValueError as e:
+            print(e)
+            raise e
+            sol = {"x":[0,0,0,0,0,0]}
+        # print(time.time()-time_b, time_b- time_a)
+        solutions = sol['x']
 
-    solutions = lsq_linear(A, b, bounds=bounds).x
-
-    # # print(b)
-    # n = len(b)
-
-    # # bounds = ([i.speedbound_reverse for i in motors], [i.speedbound_forward for i in motors]) if limit else (-np.inf, np.inf)
-    # # solutions = lsq_linear(A, b, bounds=bounds, lsq_solver="exact", method="bvls").x
-    # # print(solutions)
-
-    # # time_a = time.time()
-    # solutions = np.linalg.lstsq(A, b, rcond=None)[0]
-    # if optimize:
-    #     def fun(x):
-    #         s = sum(np.abs(np.dot(A,x)-b))
-    #         print(s)
-    #         return s
-    #     time_b = time.time()
-    #     try:
-    #         sol = minimize(fun, solutions, method='L-BFGS-B', bounds=[(i.get_speed_bounds() if limit else (None, None)) for i in motors])
-    #     except ValueError as e:
-    #         print(e)
-    #         raise e
-    #         sol = {"x":[0,0,0,0,0,0]}
-    #     # print(time.time()-time_b, time_b- time_a)
-    #     solutions = sol['x']
-
-# #     print('================')
-# #     if limit:
-# #         for speed in solutions:
-# #             print(speed)
-# #     print('================')
+#     print('================')
+#     if limit:
+#         for speed in solutions:
+#             print(speed)
+#     print('================')
 
     rA = solutions * A
 
