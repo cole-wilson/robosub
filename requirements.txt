@@ -1,5 +1,6 @@
 scipy
 opencv-python
 numpy
-eel
+websockets
 pillow
+simple-pid

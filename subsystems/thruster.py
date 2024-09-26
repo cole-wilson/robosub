@@ -1,24 +1,46 @@
 import numpy as np
 from math import sin, cos, tan, radians
-from scipy.optimize import minimize
+from scipy.optimize import minimize, lsq_linear
+import time
+import functools
 
+import simulation
 
+if not simulation.is_simulated():
+    import pigpio
+    pi = pigpio.pi()       # pi1 accesses the local Pi's GPIO
+    # import RPi.GPIO as GPIO
+    # GPIO.setwarnings(False)
+    # GPIO.setmode(GPIO.BCM)
 
 np.set_printoptions(precision=3, suppress=True)
 
 def in_to_ft(x):
     return (1/12.0) * x
 
+# def calculate_duty_cycle(pulse_width, frequency):
+    # return (pulse_width / (1/))
+
 class Thruster():
     speed = 0
+    pin = None
 
-    def __init__(self, x, y, z, theta, phi, speed_bounds = (-0.7, 1), pin=None):
+    def __init__(self, x, y, z, theta, phi, speed_bounds = (-0.7, 1), pinBCM=None, freq=400):
+        if pinBCM and not simulation.is_simulated():
+            self.pin = pinBCM
+            pi.set_servo_pulsewidth(self.pin, 1500)
+            time.sleep(0.3)
         self.x = x
         self.y = y
         self.z = z
         self.phi = phi
         self.theta = theta
         self.speedbound_reverse, self.speedbound_forward = speed_bounds
+
+    def stop(self):
+        if self.pin:
+            pi.set_servo_pulsewidth(self.pin, 1500)
+
 
     def get_force_coefficients(self):
         p = radians(90-self.phi)
@@ -39,6 +61,18 @@ class Thruster():
 
     def set_speed(self, speed):
         self.speed = speed
+        throttle = 0
+        if self.pin:
+            if speed < 0:
+                throttle = -speed/self.speedbound_reverse
+            else:
+                throttle = speed/self.speedbound_forward
+            pulsewidth = 1500 + (400 * max(min(throttle, 1), -1))
+            # print(output)
+            pi.set_servo_pulsewidth(self.pin, pulsewidth)
+
+        # self
+        # self.pwm.ChangeDutyCycle()
 
     def get_moment_coefficients(self):
         p = radians(90-self.phi)
@@ -76,7 +110,9 @@ class Thruster():
         }
 
 
-def solve_motion(motors, Fx, Fy, Fz, Rx, Ry, Rz, limit=True):
+@functools.cache
+def solve_motion(motors, Fx, Fy, Fz, Rx, Ry, Rz, optimize=True, limit=True):
+    # print('@@@@@@@@@@@@@@@@@@@@@@')
     coefficients = []
     for motor in motors:
         coefficients.append(motor.get_force_coefficients() + motor.get_moment_coefficients())
@@ -84,22 +120,46 @@ def solve_motion(motors, Fx, Fy, Fz, Rx, Ry, Rz, limit=True):
 
     A = np.array(coefficients).transpose()
     b = np.array([Fx, Fy, Fz, Rx, Ry, Rz])
-    n = len(b)
 
 
-    # np_radii = np.linalg.lstsq(A, b, rcond=None)[0]
-    fun = lambda x: np.linalg.norm(np.dot(A,x)-b)
-    try:
-        sol = minimize(fun, np.zeros(n), method='L-BFGS-B', bounds=[(i.get_speed_bounds() if limit else (None, None)) for i in motors])
-    except ValueError as e:
-        # print(e)
-        # raise e
-        sol = {"x":[0,0,0,0,0,0]}
-    np_radii = sol['x']
+    bounds = ([i.speedbound_reverse for i in motors], [i.speedbound_forward for i in motors])
 
-    rA = np_radii * A
+    solutions = lsq_linear(A, b, bounds=bounds).x
 
-    return {"speeds": list(np_radii), "actual": list(map(sum, rA))}
+    # # print(b)
+    # n = len(b)
+
+    # # bounds = ([i.speedbound_reverse for i in motors], [i.speedbound_forward for i in motors]) if limit else (-np.inf, np.inf)
+    # # solutions = lsq_linear(A, b, bounds=bounds, lsq_solver="exact", method="bvls").x
+    # # print(solutions)
+
+    # # time_a = time.time()
+    # solutions = np.linalg.lstsq(A, b, rcond=None)[0]
+    # if optimize:
+    #     def fun(x):
+    #         s = sum(np.abs(np.dot(A,x)-b))
+    #         print(s)
+    #         return s
+    #     time_b = time.time()
+    #     try:
+    #         sol = minimize(fun, solutions, method='L-BFGS-B', bounds=[(i.get_speed_bounds() if limit else (None, None)) for i in motors])
+    #     except ValueError as e:
+    #         print(e)
+    #         raise e
+    #         sol = {"x":[0,0,0,0,0,0]}
+    #     # print(time.time()-time_b, time_b- time_a)
+    #     solutions = sol['x']
+
+# #     print('================')
+# #     if limit:
+# #         for speed in solutions:
+# #             print(speed)
+# #     print('================')
+
+    rA = solutions * A
+
+    return {"speeds": list(solutions), "actual": list(map(sum, rA))}
+
 
 
 def get_movement(motors):
@@ -114,7 +174,7 @@ def get_movement(motors):
 
     rA = speeds * A
 
-    # print(speeds)
+    # print(rA)
 
     return list(map(sum, rA))
 

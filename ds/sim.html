@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width">
+		<title>robosub simulator</title>
+		<link rel="stylesheet" href="/style.css">
+	</head>
+	<body>
+		<div id="g" style="width:400px">
+			<input id="gravity" type="checkbox" checked>buoyancy<br>
+			<!-- <input id="enabled" type="checkbox" checked>ENABLED???<br> -->
+			<select id="pov">
+				<option>follow</option>
+				<option selected>orbit</option>
+				<option>fpv</option>
+			</select><br>
+			<span id="info"></span></div>
+		<script type="importmap">
+  {
+    "imports": {
+      "three": "/three/three.module.min.js",
+      "three/addons/": "/three/addons/"
+    }
+  }
+</script>
+		<script src="joypad.min.js"></script>
+		<script>
+function logOutput(a) {}
+window.logOutput = logOutput
+
+</script>
+		<!-- <script src="input.js"></script> -->
+		<script src="coms.js""></script>
+		<script src="sim.js" type="module"></script>
+	</body>
+</html>

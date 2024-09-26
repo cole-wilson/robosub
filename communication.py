@@ -1,9 +1,15 @@
 import json
-import socket
-from threading import Lock
+# import websockets.sync.server
+import websockets.exceptions
+import websockets.asyncio.server
+import asyncio
+from threading import Lock, Thread
+from queue import Empty, Queue
 
 tosend = {"values":{}}
 tosendlock = Lock()
+
+stdoutQueue = Queue()
 
 class NetworkData():
     __data = {}
@@ -15,9 +21,14 @@ class NetworkData():
             return None
 
     def __setattr__(self, name, value, from_remote=False):
+        # input((name, value))
+        old = None
+        if name in self.__data:
+            old = self.__data[name]
+
         self.__data[name] = value
 
-        if not from_remote:
+        if not from_remote:# and old != value:
             tosendlock.acquire()
             tosend["values"][name] = value
             tosendlock.release()
@@ -31,46 +42,61 @@ class NetworkData():
     def __repr__(self):
         return repr(self.__data)
 
+    def getdata(self):
+        return self.__data
+
 network = NetworkData()
 
-def listen(host, port):
-    global network
 
-    sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((host, port))
-    sock.listen(1)
 
-    while True:
-        sock.settimeout(None)
-        print('waiting for connection on', (host, port))
-        conn, addr = sock.accept()
-        conn.settimeout(0.05)
-
-        with conn:
-            print('connected by', addr)
-
-            while True:
-                # fetch any new data from the driverstation
-                try:
+async def handler(conn):
+    print('new connection')
+    try:
+        await conn.send(json.dumps(network.getdata()))
+        while True:
+            # data = await conn.recv()
+            # print(data)
+            # fetch any new data from the driverstation
+            try:
+                async with asyncio.timeout(0.05):
                     # print('fetching remote')
-                    data = conn.recv(1024).decode()
+                    data = await conn.recv()
                     # print(data)
-                    json_strings = data.replace('}{', '}|{').split('|')
+                    # json_strings = data#.replace('}{', '}|{').split('|')
 
                     try:
-                        for k, v in json.loads(json_strings[-1]).items():
+                        for k, v in json.loads(data).items():
+                            # print(k, v)
                             network.__setattr__(k, v, True)
                     except json.JSONDecodeError:
                         print(data)
                         pass
-                except TimeoutError:
-                    # print('pass fetch')
-                    pass
+            except TimeoutError:
+                pass
 
-                # send any new data to the driverstation
-                # print('sending from tosend')
-                tosendlock.acquire()
-                conn.sendall(json.dumps(tosend["values"]).encode())
-                tosend["values"] = {}
-                tosendlock.release()
+            # send any new data to the driverstation
+            # print('sending from tosend')
+            tosendlock.acquire()
+            await conn.send(json.dumps(tosend["values"]))
+            tosend["values"] = {}
+            tosendlock.release()
+
+            try:
+                await conn.send(json.dumps({"__stdout":stdoutQueue.get(block=False)}))
+            except Empty:
+                pass
+
+    except (websockets.exceptions.ConnectionClosed, websockets.exceptions.ConnectionClosedError, websockets.exceptions.ConnectionClosedOK, ConnectionResetError) as e:
+        # raise e
+        print(e)
+        if tosendlock.locked():
+            tosendlock.release()
+        network.enabled = False
+        # print('client ended connection')
+
+def listen(host, port):
+    async def main():
+        async with websockets.asyncio.server.serve(handler, host, port):
+            await asyncio.get_running_loop().create_future()  # run forever
+
+    asyncio.run(main())

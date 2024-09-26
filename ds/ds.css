@@ -1,0 +1,95 @@
+body {
+	margin: 0;
+	font-family: monospace;
+	background: black;
+	color: white;
+	overflow: hidden;
+}
+button {
+	font-family: monospace;
+}
+
+
+#controls {
+	color: black;
+	background: grey;
+	height: 20vh;
+	width: 100vw;
+	position: fixed;
+	left: 0;
+	bottom: 0;
+}
+#dashboard {
+	height: 80vh;
+}
+
+#camera img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+#networktable {
+	white-space: pre;
+}
+iframe {
+	outline: none;
+	border: none;
+	width: 100%;
+	height: calc(80vh - 3em);
+	overflow: hidden;
+}
+#cominfo {
+	height: 70%;
+	width: 300px;
+}
+#enabler {
+	width: 300px;
+	height: 30%;
+	outline: inset;
+	text-align: center;
+}
+#enabler button {
+	width: 146px;
+	box-sizing: border-box;
+	display: inline-block;
+	height: 100%;
+	font-weight: bold;
+}
+#enable {color: green;background: lightgrey;cursor:pointer;}
+#disable {color:grey;background: #333;cursor:no-drop;}
+#enabler.enabled #enable {color: grey;background: #333;cursor:no-drop;}
+#enabler.enabled #disable {color:red;background: lightgrey;cursor:pointer;}
+#log {
+	border: 1px solid black;
+	background: transparent;
+	/* color: whit; */
+	overflow: hidden;
+	white-space: pre;
+	position: absolute;
+	top: 0;
+	right: 0;
+	height: 100%;
+	width: calc(100% - 310px);
+}
+#dashboard > div {
+	box-sizing: border-box;
+	height: calc(80vh - 35px);
+	display: none;
+	/* overflow-y: auto; */
+}
+#dashboard[data-view=dashboard] #dashboardpanel {
+	display: block;
+}
+#dashboard[data-view=simulation] #simulation {
+	display: block;
+}
+#dashboard[data-view=networktable] #networktable {
+	overflow-y: auto;
+	display: block;
+}
+#dashboard[data-view=joysticks] #joysticks {
+	display: block;
+}
+#dashboard[data-view=camera] #camera {
+	display: block;
+}
