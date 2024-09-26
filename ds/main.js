@@ -1,4 +1,4 @@
-var GUI = lil.GUI;
+// var GUI = lil.GUI;
 document.getElementById("dashboard").dataset.view = localStorage.getItem("dashboardtype") || "simulation";
 document.getElementById("dashboardview").value = localStorage.getItem("dashboardtype") || "simulation";
 document.getElementById("dashboardview").onchange = (e) => {
