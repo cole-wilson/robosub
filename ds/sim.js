@@ -199,6 +199,7 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 
 	let prevcubepos = new THREE.Vector3();
 	prevcubepos.copy(cube.position)
+	cube.rotation.reorder("YXZ");
 	cube.rotateX(rotspeedx);
 	cube.rotateY(rotspeedy);
 	cube.rotateZ(rotspeedz);

@@ -33,3 +33,8 @@ function logOutput(a) {
 	let log = document.getElementById("log")
 	log.scrollTop = log.scrollHeight;
 		log.textContent = textBuffer+"\n";}
+
+document.getElementById("enable").onkeydown = inputKeyDown;
+document.getElementById("enable").onkeyup = inputKeyUp;
+document.getElementById("disable").onkeydown = inputKeyDown;
+document.getElementById("disable").onkeyup = inputKeyUp;

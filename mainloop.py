@@ -14,8 +14,8 @@ camera = Camera()
 leds = LEDS(24)
 
 roll_PID = PID(1, 0, 0, setpoint=0)
-pitch_PID = PID(1, 0, 0)
-yaw_PID = PID(1, 0, 0)
+pitch_PID = PID(1, 0, 0, setpoint=0)
+yaw_PID = PID(1, 0, 0, setpoint=0)
 
 BUOYANCY = 2.5
 
@@ -78,26 +78,20 @@ def loop():
     rotation = Rotation.from_euler("ZYX",[-imu.get_yaw(), -imu.get_roll(), -imu.get_pitch()])
     x_speed_b, y_speed_b, z_speed_b = rotation.apply([0, 0, BUOYANCY])
 
-    if y_speed > 20:
-        controller.setRumble()
-    else:
-        controller.stopRumble()
+    # if y_speed > 22:
+    #     controller.setRumble()
+    # else:
+    #     controller.stopRumble()
     # print(x_speed, y_speed, z_speed, pitch_speed, roll_speed, yaw_speed)
 
-    # if abs(roll_speed) < 0.1:
-    #     roll_speed = roll_PID(imu.get_roll())
-    # else:
-    #     roll_PID.setpoint = imu.get_roll()
-
-    # if abs(pitch_speed) < 0.1:
-    #     pitch_speed = pitch_PID(imu.get_pitch())
-    # else:
-    #     pitch_PID.setpoint = imu.get_pitch()
-
-    # if abs(yaw_speed) < 0.1:
-    #     yaw_speed = yaw_PID(imu.get_yaw())
-    # else:
-    #     yaw_PID.setpoint = imu.get_yaw()
+    if abs(roll_speed) < 0.1 and abs(pitch_speed) < 0.1 and abs(yaw_speed) < 0.1:
+        roll_speed = roll_PID(imu.get_roll())
+        pitch_speed = pitch_PID(imu.get_pitch())
+        yaw_speed = yaw_PID(imu.get_yaw())
+    else:
+        roll_PID.setpoint = imu.get_roll()
+        pitch_PID.setpoint = imu.get_pitch()
+        yaw_PID.setpoint = imu.get_yaw()
 
     motor_speeds = solve_motion(motors, x_speed - x_speed_b, y_speed - y_speed_b, z_speed - z_speed_b, pitch_speed, roll_speed, yaw_speed)["speeds"]
 
