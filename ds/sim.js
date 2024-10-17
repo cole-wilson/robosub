@@ -199,10 +199,31 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 
 	let prevcubepos = new THREE.Vector3();
 	prevcubepos.copy(cube.position)
+
 	cube.rotation.reorder("YXZ");
+
+
+	if (network.Simulated) {
+		network["IMU/pitch"]= cube.rotation.x;
+		network["IMU/roll"]= cube.rotation.y;
+		network["IMU/yaw"]= cube.rotation.z;
+		network["IMU/accel_x"]= results[0];
+		network["IMU/accel_y"]= results[1];
+		network["IMU/accel_z"]= results[2];
+	} else {
+		cube.rotation.x = 0 //network["IMU/pitch"] || 0;
+		cube.rotation.y = 0 //network["IMU/roll"] || 0;
+		cube.rotation.z = 0 //network["IMU/yaw"] || 0;
+		cube.rotateX(network["IMU/pitch"] || 0);
+		cube.rotateY(network["IMU/roll"] || 0);
+		cube.rotateZ(network["IMU/yaw"] || 0);
+
+
+	}
 	cube.rotateX(rotspeedx);
 	cube.rotateY(rotspeedy);
 	cube.rotateZ(rotspeedz);
+
 	cube.translateX(speedx);
 	cube.translateY(speedy);
 	cube.translateZ(speedz);
@@ -212,15 +233,6 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 	camera.position.x -= prevcubepos.x - cube.position.x;
 	camera.position.y -= prevcubepos.y - cube.position.y;
 	camera.position.z -= prevcubepos.z - cube.position.z;
-
-	if (network.Simulated) {
-		network["IMU/pitch"]= cube.rotation.x;
-		network["IMU/roll"]= cube.rotation.y;
-		network["IMU/yaw"]= cube.rotation.z;
-		network["IMU/accel_x"]= results[0];
-		network["IMU/accel_y"]= results[1];
-		network["IMU/accel_z"]= results[2];
-	}
 
 	const v1 = new THREE.Vector3(0, 1.08, -0.05).applyQuaternion(cube.quaternion);
 	camcamera.quaternion.copy(cube.quaternion);

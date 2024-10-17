@@ -75,7 +75,7 @@ def loop():
     roll_speed = controller.getButton(5) - controller.getButton(4)
 
 
-    rotation = Rotation.from_euler("ZYX",[-imu.get_yaw(), -imu.get_roll(), -imu.get_pitch()])
+    rotation = Rotation.from_euler("ZYX",[imu.get_yaw(), imu.get_roll(), imu.get_pitch()])
     x_speed_b, y_speed_b, z_speed_b = rotation.apply([0, 0, BUOYANCY])
 
     # if y_speed > 22:
@@ -93,6 +93,8 @@ def loop():
         pitch_PID.setpoint = imu.get_pitch()
         yaw_PID.setpoint = imu.get_yaw()
 
+    print(imu.get_roll(), imu.get_pitch(), imu.get_yaw())
+
     motor_speeds = solve_motion(motors, x_speed - x_speed_b, y_speed - y_speed_b, z_speed - z_speed_b, pitch_speed, roll_speed, yaw_speed)["speeds"]
 
     for motor, speed in zip(motors, motor_speeds):
@@ -103,6 +105,7 @@ def loop():
 
 # every couple milliseconds when disabled
 def disabled():
+    [imu.get_yaw(), imu.get_roll(), imu.get_pitch()]
     # print('loop')
     expose_motors(m1, m2, m3, m4, m5, m6)
     set_movement([0,0,0,0,0,0])
