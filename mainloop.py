@@ -2,6 +2,8 @@ from subsystems.controller import Controller
 from subsystems.imu import IMU
 from subsystems.leds import LEDS
 from subsystems.camera import Camera
+from subsystems.servo import Servo
+from subsystems.digitalinput import DigitalInput
 from subsystems.thruster import Thruster, get_movement, solve_motion
 from simulation import expose_motors, set_movement
 from scipy.spatial.transform import Rotation
@@ -11,7 +13,7 @@ from simple_pid import PID
 controller = Controller()
 imu = IMU()
 camera = Camera()
-leds = LEDS(24)
+leds = LEDS(18, n=89)
 
 roll_PID = PID(1, 0, 0, setpoint=0)
 pitch_PID = PID(1, 0, 0, setpoint=0)
@@ -38,14 +40,22 @@ def inch(inches):
 # m5 = Thruster(inch(-5.195), inch(3), inch(-0.5),     0,  00,       (-6.40, 8.20), 24)
 # m6 = Thruster(inch( 5.195), inch(3), inch(-0.5),     0,  00,       (-6.40, 8.20), 26)
 
-m1 = Thruster(-1, 0, -0.5,     0,  -90,            (-2.71, 3.48), 20)
-m2 = Thruster(1, 0, -0.5,     0,  -90,            (-2.71, 3.48), 21)
-m3 = Thruster(0,  1,   -1,     0,  00,     (-2.71, 3.48), 22)
-m4 = Thruster(0,  1,   1,      0,  00,     (-2.71, 3.48), 23)
-m5 = Thruster(-1,  0.5,   0,      0,   00,       (-6.40, 8.20), 24)
-m6 = Thruster(1,   0.5,   0,     0,  00,       (-6.40, 8.20), 26)
+m1 = Thruster(-1, 0, -0.5,     0,  -90,            (-2.71, 3.48), 9)
+m2 = Thruster(1, 0, -0.5,     0,  -90,            (-2.71, 3.48), 11)
+
+m3 = Thruster(0,  1,   -1,     0,  00,     (-2.71, 3.48), 19)
+m4 = Thruster(0,  1,   1,      0,  00,     (-2.71, 3.48), 26)
+
+m5 = Thruster(-1,  0.5,   0,      0,   00,       (-6.40, 8.20), 16)
+m6 = Thruster(1,   0.5,   0,     0,  00,       (-6.40, 8.20), 20)
 
 motors = (m1, m2, m3, m4, m5, m6)
+
+panServo = Servo(23)
+tiltServo = Servo(24)
+
+moisture = DigitalInput(1, default=0)
+
 
 max_x = solve_motion(motors, 1000, 0, BUOYANCY, 0, 0, 0, optimize=True, limit=True)["actual"][0]
 max_y = solve_motion(motors, 0, 1000, BUOYANCY, 0, 0, 0, optimize=True, limit=True)["actual"][1]
@@ -75,25 +85,31 @@ def loop():
     roll_speed = controller.getButton(5) - controller.getButton(4)
 
 
+    # for i in range():
+    leds.clear()
+    leds.set_led(43 + round(30*(controller.getButton(7) - controller.getButton(6))), 0,255,0)
+
+
     rotation = Rotation.from_euler("ZYX",[imu.get_yaw(), imu.get_roll(), imu.get_pitch()])
     x_speed_b, y_speed_b, z_speed_b = rotation.apply([0, 0, BUOYANCY])
 
-    # if y_speed > 22:
-    #     controller.setRumble()
-    # else:
-    #     controller.stopRumble()
+    if y_speed > max_y - 0.5:
+        controller.setRumble()
+    else:
+        controller.stopRumble()
     # print(x_speed, y_speed, z_speed, pitch_speed, roll_speed, yaw_speed)
 
-    if abs(roll_speed) < 0.1 and abs(pitch_speed) < 0.1 and abs(yaw_speed) < 0.1:
+    if abs(roll_speed) < 1 and abs(pitch_speed) < 1 and abs(yaw_speed) < 1:
         roll_speed = roll_PID(imu.get_roll())
         pitch_speed = pitch_PID(imu.get_pitch())
         yaw_speed = yaw_PID(imu.get_yaw())
+        # roll_speed = pitch_PID = yaw_speed = 0
     else:
         roll_PID.setpoint = imu.get_roll()
         pitch_PID.setpoint = imu.get_pitch()
         yaw_PID.setpoint = imu.get_yaw()
 
-    print(imu.get_roll(), imu.get_pitch(), imu.get_yaw())
+    # print(imu.get_roll(), imu.get_pitch(), imu.get_yaw())
 
     motor_speeds = solve_motion(motors, x_speed - x_speed_b, y_speed - y_speed_b, z_speed - z_speed_b, pitch_speed, roll_speed, yaw_speed)["speeds"]
 
@@ -110,6 +126,6 @@ def disabled():
     expose_motors(m1, m2, m3, m4, m5, m6)
     set_movement([0,0,0,0,0,0])
 
-    leds.set_leds(255, 0, 0)
+    leds.set_leds(255,  0, 0)
     for motor in motors:
         motor.set_speed(0)
