@@ -39,7 +39,7 @@ def main(_):
             if time.time() - at > 0.02:
                 print("@@@@@@@@@@@@", at)
             if communication.network["enabled"]:
-                mainloop.loop()
+                mainloop.enabled()
             else:
                 mainloop.disabled()
             time.sleep(0.001)

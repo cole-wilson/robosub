@@ -1,4 +1,6 @@
 scipy
+MarkupSafe
+flask
 opencv-python
 numpy
 websockets
