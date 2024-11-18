@@ -1,5 +1,5 @@
 from subsystems.controller import Controller
-from subsystems.imu import IMU
+from subsystems.imu import IMU, Quaternion
 from subsystems.leds import LEDS
 from subsystems.camera import Camera
 from subsystems.servo import Servo
@@ -8,17 +8,15 @@ from subsystems.thruster import Thruster, get_movement, solve_motion
 from simulation import expose_motors, set_movement
 from pid import PID
 import cv2
+import math
 from scipy.spatial.transform import Rotation
 import time
+from quaternion import quat_pid
 
 controller = Controller()
 imu = IMU()
 camera = Camera()
 leds = LEDS(18, n=89)
-
-roll_PID = PID(4, 0, 0, setpoint=0)
-pitch_PID = PID(4, 0, 0, setpoint=0)
-yaw_PID = PID(4, 0, 0, setpoint=0)
 
 BUOYANCY = 1
 
@@ -53,8 +51,13 @@ def setup():
     expose_motors(m1, m2, m3, m4, m5, m6)
     set_movement([0,0,0,0,0,0])
 
+ini_quat = Quaternion() # imu.get_quaternion()
+mode = ""
+
 # every couple milliseconds when enabled
 def enabled():
+    global ini_quat
+    global mode
     # _, cap = camera.read()
     # cv2.imshow("a", cap)
     # cv2.waitKey()
@@ -71,6 +74,8 @@ def enabled():
     pitch_speed = 3 * -controller.getAxis(1)
     roll_speed = controller.getButton(5) - controller.getButton(4)
 
+    if (controller.getButton(1)):
+        ini_quat = imu.get_quaternion()
 
     # for i in range():
     leds.clear()
@@ -79,7 +84,7 @@ def enabled():
     quat = imu.get_quaternion()
     if quat is not None:
         try:
-            rotation = Rotation.from_quat(quat)
+            rotation = quat.as_rotation()
             # print(rotation)
 
             x_speed_b, y_speed_b, z_speed_b = rotation.apply([0, 0, BUOYANCY])
@@ -90,6 +95,27 @@ def enabled():
     else:
         x_speed_b, y_speed_b, z_speed_b = (0, 0, 0)
 
+    # print(mode)
+    if (abs(roll_speed) > 0.1):
+        if mode != "roll":
+            ini_quat = imu.get_quaternion()
+            mode = "roll"
+        _, pitch_speed, yaw_speed = quat_pid(imu, ini_quat, [1,0,0])
+    elif (abs(pitch_speed) > 0.1):
+        if mode != "pitch":
+            ini_quat = imu.get_quaternion()
+            mode = "pitch"
+        roll_speed, _, yaw_speed = quat_pid(imu, ini_quat, [0,1,0])
+    elif (abs(yaw_speed) > 0.1):
+        if mode != "yaw":
+            ini_quat = imu.get_quaternion()
+            mode = "yaw"
+        roll_speed, pitch_speed, _ = quat_pid(imu, ini_quat, [0,0,1])
+    else:
+        if mode != "stable":
+            ini_quat = imu.get_quaternion()
+            mode = "stable"
+        roll_speed, pitch_speed, yaw_speed = quat_pid(imu, ini_quat, [0,0,0])
 
     if y_speed > max_y - 0.5:
         controller.setRumble()
@@ -101,7 +127,8 @@ def enabled():
 
     for motor, speed in zip(motors, motor_speeds):
         motor.set_speed(speed)
-    print([imu.get_accel_x(), imu.get_accel_y(), imu.get_accel_z()])
+    # print([imu.get_accel_x(), imu.get_accel_y(), imu.get_accel_z()])
+
 
 
 # every couple milliseconds when disabled

@@ -50,8 +50,8 @@ if __name__ == "__main__":
     try:
         if not simulation.is_simulated():
             os.chdir("/home/robosub/code/")
-        # with contextlib.redirect_stdout(TeeIO(sys.stdout)):
-        main(sys.argv)
+        with contextlib.redirect_stdout(TeeIO(sys.stdout)):
+            main(sys.argv)
     except (Exception, KeyboardInterrupt) as e:
         print('...mainloop has ended', e)
         raise e

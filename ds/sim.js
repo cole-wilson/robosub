@@ -118,6 +118,7 @@ window.cam = camera;
 let vectorArrows = [];
 let accelArrow;
 let vectorArrowsReverse = [];
+let debug_arrows = {};
 
 
 const Force_M = 1;
@@ -203,6 +204,21 @@ async function animate() {
 	let dirvec = new THREE.Vector3(ax,ay,az);
 	accelArrow.setDirection((dirvec).normalize());
 	accelArrow.setLength(dirvec.length());
+
+
+	Object.keys(network["debug_axes"] || {}).forEach((i)=>{
+		if (!(i in debug_arrows)) {
+
+			var arrowHelper = new THREE.ArrowHelper((new THREE.Vector3(...network["debug_axes"][i])).normalize(), cube.position, length, "red" );
+			scene.add( arrowHelper );
+			arrowHelper.setLength(100);
+			debug_arrows[i] = arrowHelper;
+		}
+		debug_arrows[i].setDirection((new THREE.Vector3(...network["debug_axes"][i])).normalize());
+		debug_arrows[i].setLength(10);
+		debug_arrows[i].position.set(...cube.position)
+		console.log(debug_arrows[i])
+	})
 
 
 	info.innerHTML = `

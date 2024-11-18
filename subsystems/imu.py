@@ -2,6 +2,8 @@ from communication import network
 from simulation import is_simulated
 import math
 from scipy.spatial.transform import Rotation
+import numpy as np
+from typing import Self
 
 if not is_simulated():
     # # import board
@@ -22,27 +24,75 @@ class Quaternion():
         self.y = y
         self.z = z
 
-    def scalar_first(self):
-        return [self.w, self.x, self.y, self.z]
+    def as_wxyz(self) -> tuple:
+        return (self.w, self.x, self.y, self.z)
 
-    def scalar_last(self):
-        return [self.x, self.y, self.z, self.w]
+    def as_xyzw(self) -> tuple:
+        return (self.x, self.y, self.z, self.w)
+
+    def as_rotation(self) -> Rotation:
+        return Rotation.from_quat([-self.x, self.y, self.z, self.w])
+
+    def inv(self):
+        return Quaternion(self.w, -self.x, -self.y, -self.z)
+
+    def get_axis(self):
+        return np.array([self.x, self.y, self.z])
 
     @classmethod
-    def from_BNO055(cls, sensor_quat):
-        q = cls(sensor_quat[])
+    def from_xyzw(cls, arr:list) -> Self:
+        x = arr[0]
+        y = arr[1]
+        z = arr[2]
+        w = arr[3]
+        return cls(w, x, y, z)
+
+    @classmethod
+    def from_BNO055(cls, sensor_quat) -> Self:
+        return cls(*sensor_quat)
+
+    def times(self, q) -> Self:
+        p = self
+        p0 = p.w
+        q0 = q.w
+
+        P = np.array([p.x, p.y, p.z])
+        Q = np.array([q.x, q.y, q.z])
+
+        pq_w = (p0 * q0) - np.dot(P, Q)
+        pq_xyz = (p0 * Q) + (q0 * P) + np.cross(P, Q)
+        return Quaternion(pq_w, *pq_xyz)
+
+    def __mul__(self, other):
+        return self.times(other)
+
+    @classmethod
+    def from_euler(cls, roll, pitch, yaw):
+        # https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+        cr = math.cos(roll * 0.5);
+        sr = math.sin(roll * 0.5);
+        cp = math.cos(pitch * 0.5);
+        sp = math.sin(pitch * 0.5);
+        cy = math.cos(yaw * 0.5);
+        sy = math.sin(yaw * 0.5);
+
+        w = cr * cp * cy + sr * sp * sy;
+        x = sr * cp * cy - cr * sp * sy;
+        y = cr * sp * cy + sr * cp * sy;
+        z = cr * cp * sy - sr * sp * cy;
+
+        return cls(w, x, y, z)
+
+    def __repr__(self):
+        return f"<<{round(self.w, 3)}, {round(self.x, 3)}, {round(self.y, 3)}, {round(self.z, 3)}>>"
+
 
 
 class IMU():
     sensor = None
 
     def __init__(self) -> None:
-        ...
         if not is_simulated():
-            # i2c = busio.I2C(board.SCL, board.SDA)
-            # sensor = adafruit_bno055.BNO055_I2C(i2c)
-            # i2c = busio.I2C(board.SCL, board.SDA)
-            # sensor = adafruit_bno055.BNO055_I2C(i2c)
             try:
                 self.i2c = busio.I2C(board.SCL, board.SDA)
                 # self.uart = serial.Serial("/dev/serial0")
@@ -53,39 +103,19 @@ class IMU():
             except:
                 pass
 
-    def get_quaternion(self):
+    def get_quaternion(self) -> Quaternion:
         if is_simulated() or not self.sensor:
             quat = network["IMU/quaternion"] or None
-            # print(quat)
-            if quat is None:
-                return None
-            quat_py = [
-                -quat[0],
-                quat[1],
-                quat[2],
-                quat[3]
-            ]
-            return quat_py
+            if quat is not None:
+                return Quaternion.from_xyzw(network["IMU/quaternion"])
         else:
-            # rot = Rotation.from_quat(self.sensor.quaternion)
-            # rot.
             q_sens = self.sensor.quaternion
             if q_sens is None or q_sens[0] is None:
                 return None
-            quat = [
-                q_sens[1],
-                q_sens[2],
-                q_sens[3],
-                q_sens[0]
-            ]
-            quat_py = [
-                -q_sens[1],
-                q_sens[2],
-                q_sens[3],
-                q_sens[0]
-            ]
-            network["IMU/quaternion"] = quat
-            return quat_py
+
+            q = Quaternion.from_BNO055(q_sens)
+            network["IMU/quaternion"] = q.as_xyzw()
+            return q
 
     # def get_pitch(self):
     #     if is_simulated() or not self.sensor:
