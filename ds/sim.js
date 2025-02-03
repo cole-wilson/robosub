@@ -152,7 +152,7 @@ window.clear = function() {
 
 function get_gravbouyancy() {
 	if (document.getElementById("gravity").checked) {
-		return 1;
+		return 2;
 	} else {
 		return 0;
 	}

@@ -59,7 +59,7 @@ function logOutput(a) {
 	}
 	let log = document.getElementById("log")
 	log.scrollTop = log.scrollHeight;
-		log.textContent = textBuffer+"\n";}
+		log.textContent = textBuffer+"\n<br>";}
 
 document.getElementById("enable").onkeydown = inputKeyDown;
 document.getElementById("enable").onkeyup = inputKeyUp;

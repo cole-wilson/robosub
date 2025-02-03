@@ -67,6 +67,8 @@ class Thruster():
                 throttle = -speed/self.speedbound_reverse
             else:
                 throttle = speed/self.speedbound_forward
+
+            throttle *= 1
             pulsewidth = 1500 + (400 * max(min(throttle, 1), -1))
             # print(output)
             pi.set_servo_pulsewidth(self.pin, pulsewidth)

@@ -13,7 +13,12 @@ z_pid = PID(9, 0, 0)
 z_pid.set(0)
 
 def quat_pid(imu: IMU, q_0: Quaternion, axis):
-    q_err = imu.get_quaternion().inv() * q_0
+    if q_0 is None:
+        return 0,0,0
+    iq = imu.get_quaternion()
+    if iq is None:
+        return 0, 0, 0
+    q_err = iq.inv() * q_0
 
     xd, yd, zd = (q_err.get_axis() - np.array(axis))
 
