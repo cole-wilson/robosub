@@ -81,6 +81,9 @@ window.cube = cube;
 const axesHelper = new THREE.AxesHelper( 10 );
 scene.add(axesHelper);
 
+const axesHelper2 = new THREE.AxesHelper( 3 );
+cube.add(axesHelper2);
+
 const directionalLight = new THREE.DirectionalLight( 0xffffff, 100);
 directionalLight.position.z = 100
 directionalLight.position.y = 0
@@ -113,7 +116,9 @@ controls.update();
 window.cam = camera;
 
 let vectorArrows = [];
+let accelArrow;
 let vectorArrowsReverse = [];
+let debug_arrows = {};
 
 
 const Force_M = 1;
@@ -147,7 +152,7 @@ window.clear = function() {
 
 function get_gravbouyancy() {
 	if (document.getElementById("gravity").checked) {
-		return 2.5;
+		return 7.5;
 	} else {
 		return 0;
 	}
@@ -189,20 +194,68 @@ async function animate() {
 			vectorArrows[i].setLength(0);
 		}
 	}
+	let euler = new THREE.Euler();
+	euler.setFromQuaternion(cube.quaternion);
+
+
+	let ax = network["IMU/accel_x"];
+	let ay = network["IMU/accel_y"];
+	let az = network["IMU/accel_z"];
+	let dirvec = new THREE.Vector3(ax,ay,az);
+	accelArrow.setDirection((dirvec).normalize());
+	accelArrow.setLength(dirvec.length());
+
+
+	Object.keys(network["debug_axes"] || {}).forEach((i)=>{
+		if (!(i in debug_arrows)) {
+
+			var arrowHelper = new THREE.ArrowHelper((new THREE.Vector3(...network["debug_axes"][i])).normalize(), cube.position, length, "red" );
+			scene.add( arrowHelper );
+			arrowHelper.setLength(100);
+			debug_arrows[i] = arrowHelper;
+		}
+		debug_arrows[i].setDirection((new THREE.Vector3(...network["debug_axes"][i])).normalize());
+		debug_arrows[i].setLength(10);
+		debug_arrows[i].position.set(...cube.position)
+		console.log(debug_arrows[i])
+	})
+
 
 	info.innerHTML = `
 position: (${r(cube.position.x)}, ${r(cube.position.y)}, ${r(cube.position.z)})<br>
-rotation: (${r(cube.rotation.x)}, ${r(cube.rotation.y)}, ${r(cube.rotation.z)})<br>
 chassis speed: (${r(results[0])}, ${r(results[1])}, ${r(results[2])}, ${r(results[3])}, ${r(results[4])}, ${r(results[5])})<br>
 thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 	`;
 
 	let prevcubepos = new THREE.Vector3();
 	prevcubepos.copy(cube.position)
-	cube.rotation.reorder("YXZ");
+
+	// cube.rotation.reorder("YXZ");
+
+
+	if (network.Simulated) {
+		// network["IMU/pitch"]= euler.x;
+		// network["IMU/roll"]= euler.y;
+		// network["IMU/yaw"]= euler.z;
+		network["IMU/quaternion"] = cube.quaternion;
+		network["IMU/accel_x"]= results[0] * 10;
+		network["IMU/accel_y"]= results[1] * 10;
+		network["IMU/accel_z"]= results[2] * 10;
+	} else {
+		// cube.rotation.x = 0 //network["IMU/pitch"] || 0;
+		// cube.rotation.y = 0 //network["IMU/roll"] || 0;
+		// cube.rotation.z = 0 //network["IMU/yaw"] || 0;
+		// cube.rotateX(network["IMU/pitch"] || 0);
+		// cube.rotateY(network["IMU/roll"] || 0);
+		// cube.rotateZ(network["IMU/yaw"] || 0);
+		cube.quaternion.fromArray(network["IMU/quaternion"]);
+
+	}
+
 	cube.rotateX(rotspeedx);
 	cube.rotateY(rotspeedy);
 	cube.rotateZ(rotspeedz);
+
 	cube.translateX(speedx);
 	cube.translateY(speedy);
 	cube.translateZ(speedz);
@@ -212,15 +265,6 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 	camera.position.x -= prevcubepos.x - cube.position.x;
 	camera.position.y -= prevcubepos.y - cube.position.y;
 	camera.position.z -= prevcubepos.z - cube.position.z;
-
-	if (network.Simulated) {
-		network["IMU/pitch"]= cube.rotation.x;
-		network["IMU/roll"]= cube.rotation.y;
-		network["IMU/yaw"]= cube.rotation.z;
-		network["IMU/accel_x"]= results[0];
-		network["IMU/accel_y"]= results[1];
-		network["IMU/accel_z"]= results[2];
-	}
 
 	const v1 = new THREE.Vector3(0, 1.08, -0.05).applyQuaternion(cube.quaternion);
 	camcamera.quaternion.copy(cube.quaternion);
@@ -261,6 +305,11 @@ thruster speeds: [${thrusters.map(i=>r(i.speed))}]<br>
 async function main() {
 	thrusters = network["Sim/Motors"];
 	window.motors = thrusters;
+
+		var arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), length, "red" );
+		arrowHelper.line.material.linewidth = 0.5;
+		cube.add( arrowHelper );
+		accelArrow = arrowHelper;
 
 	for (var i=0;i<thrusters.length;i++) {
 		let motor = thrusters[i];

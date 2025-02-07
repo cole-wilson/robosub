@@ -1,4 +1,7 @@
 .DS_Store
+wheels/
+wheels/*
+wheels
 __pycache__/*
 __pycache__
 __pycache__/
