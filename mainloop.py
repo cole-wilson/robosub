@@ -1,4 +1,5 @@
 from numpy import roll
+from pid import PID
 from subsystems.controller import Controller
 from subsystems.imu import IMU, Quaternion
 from subsystems.leds import LEDS
@@ -13,13 +14,21 @@ import math
 from scipy.spatial.transform import Rotation
 import time
 from quaternion import quat_pid
+from communication import network
 
 controller = Controller()
 imu = IMU()
 camera = Camera()
 leds = LEDS(18, n=93)
 
-BUOYANCY = 2
+BUOYANCY = 0
+
+xpid_a = PID(1, 0, 0)
+xpid_a.set(0)
+ypid_a = PID(1, 0, 0)
+ypid_a.set(0)
+zpid_a = PID(200, 0, 0)
+zpid_a.set(0)
 
 def inch(inches):
     return 1.8 * (inches/10)
@@ -32,12 +41,12 @@ def inch(inches):
 # m5 = Thruster(-1.0,  1.0,  0.0,      00,  00,     (-6.40, 8.20), 16)
 # m6 = Thruster( 1.0,  1.0,  0.0,      00,  00,     (-6.40, 8.20), 20)
 
-m1 = Thruster(1, -1, 0,     0,  -90,            (-6.40, 8.20), 9)
-m2 = Thruster(1,  0,   0,      0,  00,     (-6.40, 8.20), 11)
-m3 = Thruster(1,   1,   0,     0,  -90,       (-6.40, 8.20), 19)
-m4 = Thruster(-1,  1,   0,      0,   -90,       (-6.40, 8.20), 26)
-m5 = Thruster(-1,  0,   0,     0,  00,     (-6.40, 8.20), 16)
-m6 = Thruster(-1, -1, 0,     0,  -90,            (-6.40, 8.20), 20)
+m1 = Thruster(1.25, -1, -0.25,     0,  -90,            (-6.40, 8.20), 9)
+m2 = Thruster(1.25,  0,   -0.25,      0,  00,     (-6.40, 8.20), 11)
+m3 = Thruster(1.25,   1,   -0.25,     0,  -90,       (-6.40, 8.20), 19)
+m4 = Thruster(-1.25,  1,   -0.25,      0,   -90,       (-6.40, 8.20), 26)
+m5 = Thruster(-1.25,  0,   -0.25,     0,  00,     (-6.40, 8.20), 16)
+m6 = Thruster(-1.25, -1, -0.25,     0,  -90,            (-6.40, 8.20), 20)
 
 motors = (m1, m2, m3, m4, m5, m6)
 
@@ -64,8 +73,19 @@ def setup():
 ini_quat = Quaternion() # imu.get_quaternion()
 mode = ""
 
+i = 500
+
 # every couple milliseconds when enabled
 def enabled():
+    # global i
+    # input(i)
+    # m6.set_pw(i)
+    # i += 100
+    # return
+
+
+
+
     # m1.set_speed(50)
     global ini_quat
     global mode
@@ -80,14 +100,19 @@ def enabled():
     x_speed = max_x * controller.getAxis(2)
     y_speed = (max_y * controller.getButton(7)) + (min_y * controller.getButton(6))
     #y_speed = max_y * controller.getAxis(3) # controller.getAxis(6)
-    z_speed = (max_z * controller.getButton(2)) + (min_y * controller.getButton(0))
+    z_speed = ((min_z * controller.getButton(2)) + (max_y * controller.getButton(0))) * 0.4
 
-    yaw_speed = 3 * -controller.getAxis(0)
-    pitch_speed = 3 * controller.getAxis(1)
+    yaw_speed = 9 * controller.getAxis(0)
+    pitch_speed = -9 * controller.getAxis(1)
     roll_speed = 0
     if controller.getButton(3):
-        roll_speed = 3 * controller.getAxis(0)
+        roll_speed = 9 * controller.getAxis(0)
     # print(roll_speed)
+
+    if controller.getButton(17):
+        network.enabled = False
+    # if controller.getButton(9):
+    #     network.enabled = True
 
 
     # print(yaw_speed, pitch_speed, roll_speed)
@@ -103,6 +128,7 @@ def enabled():
 
     try:
         quat = imu.get_quaternion()
+        # quat = None
     except OSError:
         quat = None
     if quat is not None:
@@ -162,22 +188,39 @@ def enabled():
             mode = "stable"
         roll_speed, pitch_speed, yaw_speed = quat_pid(imu, ini_quat, [0,0,0])
 
-    # if y_speed > max_y - 0.5:
-    #     controller.setRumble()
-    # else:
-    #     controller.stopRumble()
+    try:
+        ...
+        # x_speed = -xpid_a.calculate(imu.get_accel_x())
+        # y_speed = -ypid_a.calculate(imu.get_accel_y())
+        # z_speed = -zpid_a.calculate(imu.get_accel_z())
+    except:
+        pass
 
-    motor_speeds = solve_motion(motors, x_speed - x_speed_b, y_speed - y_speed_b, z_speed - z_speed_b, pitch_speed, roll_speed, yaw_speed)["speeds"]
+    if y_speed > max_y - 0.5:
+        controller.setRumble()
+    else:
+        controller.stopRumble()
+
+    # x_speed_b = y_speed_b = z_speed_b = 0
+    motor_speeds = solve_motion(motors, x_speed + x_speed_b, y_speed - y_speed_b, z_speed + z_speed_b, pitch_speed, roll_speed, yaw_speed)["speeds"]
 
 
-    for motor, speed in zip(motors, motor_speeds):
-        motor.set_speed(speed)
-    # print([imu.get_accel_x(), imu.get_accel_y(), imu.get_accel_z()])
+    # for motor, speed in zip(motors, motor_speeds):
+    #     motor.set_speed(speed)
+    m2.set_speed(motor_speeds[1])
+    m5.set_speed(motor_speeds[4])
+    # # # print([imu.get_accel_x(), imu.get_accel_y(), imu.get_accel_z()])
+    # global i
+    # m1.set_speed(i)
+    # i += 0.01
+    # time.sleep(0.01)
+    # print(i)
 
 
 
 # every couple milliseconds when disabled
 def disabled():
+    global ini_quat
     # print('disabled')
     # [imu.get_yaw(), imu.get_roll(), imu.get_pitch()]
     [imu.get_accel_x(), imu.get_accel_y(), imu.get_accel_z()]
@@ -187,6 +230,17 @@ def disabled():
     set_movement([0,0,0,0,0,0])
 
     leds.set_leds(255,  0, 0)
+
+    if controller.getButton(9):
+        network.enabled = True
+
+
+    # print(yaw_speed, pitch_speed, roll_speed)
+    # roll_speed = controller.getButton(5) - controller.getButton(4)
+
+    if (controller.getButton(1)):
+        ini_quat = imu.get_quaternion()
+
     # print(255)
     for motor in motors:
         motor.set_speed(0)

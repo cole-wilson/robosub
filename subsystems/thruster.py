@@ -24,6 +24,7 @@ def in_to_ft(x):
 class Thruster():
     speed = 0
     pin = None
+    maxthrust = 0
 
     def __init__(self, x, y, z, theta, phi, speed_bounds = (-0.7, 1), pinBCM=None, freq=400):
         if pinBCM and not simulation.is_simulated():
@@ -68,10 +69,20 @@ class Thruster():
             else:
                 throttle = speed/self.speedbound_forward
 
-            throttle *= 1
-            pulsewidth = 1500 + (400 * max(min(throttle, 1), -1))
+            # print(throttle)
+            if throttle > self.maxthrust:
+                self.maxthrust = throttle
+            print(speed, throttle, sep="\t")
+
+            # throttle *= 20
+
+            pulsewidth = 1500 + (500 * max(min(throttle, 1), -1))
             # print(output)
             pi.set_servo_pulsewidth(self.pin, pulsewidth)
+
+
+    def set_pw(self, pulsewidth):
+        pi.set_servo_pulsewidth(self.pin, pulsewidth)
 
         # self
         # self.pwm.ChangeDutyCycle()

@@ -5,14 +5,15 @@ import numpy as np
 
 # from
 
-x_pid = PID(9, 0, 0)
+x_pid = PID(3, 0, 0)
 x_pid.set(0)
-y_pid = PID(9, 0, 0)
+y_pid = PID(3, 0, 0)
 y_pid.set(0)
-z_pid = PID(9, 0, 0)
+z_pid = PID(3, 0, 0)
 z_pid.set(0)
 
 def quat_pid(imu: IMU, q_0: Quaternion, axis):
+    print(q_0)
     if q_0 is None:
         return 0,0,0
     iq = imu.get_quaternion()
@@ -23,8 +24,15 @@ def quat_pid(imu: IMU, q_0: Quaternion, axis):
     xd, yd, zd = (q_err.get_axis() - np.array(axis))
 
     x_t = -x_pid.calculate(xd)
-    y_t = -y_pid.calculate(yd)
-    z_t = -z_pid.calculate(zd)
+    y_t = y_pid.calculate(yd)
+    z_t = z_pid.calculate(zd)
+
+    # network["debug_axes"] = {
+    #     "start": q_err.get_axis().tolist(),
+    #     "end": axis
+    #     # "now": now_axis
+    # }
+
 
     if axis[1]:
         return 0, y_t, z_t
@@ -34,10 +42,4 @@ def quat_pid(imu: IMU, q_0: Quaternion, axis):
         return 0, y_t, z_t
     else:
         return y_t, x_t, z_t
-
-    # network["debug_axes"] = {
-    #     "start": q_err.get_axis().tolist(),
-    #     "end": axis
-    #     # "now": now_axis
-    # }
 #     print(network["debug_axes"])
