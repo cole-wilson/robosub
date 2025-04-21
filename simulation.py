@@ -96,16 +96,17 @@ def serve():
         output = None
         server.serve_forever()
     else:
-        camera = picamera2.Picamera2()
-        camera.configure(camera.create_video_configuration(main={"size": (270, 180)}))
-        with camera:
-            # output = StreamingOutput()
-            # camera.start_recording(output, format='mjpeg')
-            camera.start_recording(JpegEncoder(), FileOutput(output))
-            try:
-                server.serve_forever()
-            finally:
-                camera.stop_recording()
+        ...
+        # camera = picamera2.Picamera2()
+        # camera.configure(camera.create_video_configuration(main={"size": (270, 180)}))
+        # with camera:
+        #     # output = StreamingOutput()
+        #     # camera.start_recording(output, format='mjpeg')
+        #     camera.start_recording(JpegEncoder(), FileOutput(output))
+        #     try:
+        server.serve_forever()
+        #     finally:
+        #         camera.stop_recording()
 
 def ge_ds_thread():
     # PORT = 8080

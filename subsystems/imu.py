@@ -100,7 +100,8 @@ class IMU():
                 self.sensor = adafruit_bno055.BNO055_I2C(self.i2c)
                 # for i in range(100):
                     # print(self.sensor.axis_remap)
-            except:
+            except Exception as e:
+                print("imu error", e)
                 pass
 
     def get_quaternion(self) -> Quaternion:
@@ -111,6 +112,7 @@ class IMU():
         else:
             q_sens = self.sensor.quaternion
             if q_sens is None or q_sens[0] is None:
+                print("missing IMU!!!")
                 return None
 
             q = Quaternion.from_BNO055(q_sens)

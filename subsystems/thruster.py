@@ -72,9 +72,9 @@ class Thruster():
             # print(throttle)
             if throttle > self.maxthrust:
                 self.maxthrust = throttle
-            print(speed, throttle, sep="\t")
+            # print(speed, throttle, sep="\t")
 
-            # throttle *= 20
+            # throttle *= 200
 
             pulsewidth = 1500 + (500 * max(min(throttle, 1), -1))
             # print(output)

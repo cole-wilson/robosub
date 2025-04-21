@@ -21,7 +21,7 @@ imu = IMU()
 camera = Camera()
 leds = LEDS(18, n=93)
 
-BUOYANCY = 0
+BUOYANCY = 4.4
 
 xpid_a = PID(1, 0, 0)
 xpid_a.set(0)
@@ -34,19 +34,19 @@ def inch(inches):
     return 1.8 * (inches/10)
 
              # (X,    Y,    Z)      (yaw, pitch)      min/max thrust
-# m1 = Thruster(-1.0, -1.0, -0.5,     -75,  00,     (-6.40, 8.20), 9)
-# m2 = Thruster( 1.0, -1.0, -0.5,      75,  00,     (-6.40, 8.20), 11)
-# m3 = Thruster(-1.0,  0.0, -0.5,      00,  90,     (-6.40, 8.20), 19)
-# m4 = Thruster( 1.0,  0.0, -0.5,      00,  90,     (-6.40, 8.20), 26)
-# m5 = Thruster(-1.0,  1.0,  0.0,      00,  00,     (-6.40, 8.20), 16)
-# m6 = Thruster( 1.0,  1.0,  0.0,      00,  00,     (-6.40, 8.20), 20)
+m1 = Thruster(-1.0, -1.0,  0.0,     -90,  45,     (-6.40, 8.20), 9)
+m2 = Thruster( 1.0, -1.0,  0.0,      90,  45,     (-6.40, 8.20), 11)
+m3 = Thruster(-1.0,  0.0,  0.0,      00, -45,     (-6.40, 8.20), 19)
+m4 = Thruster( 1.0,  0.0,  0.0,      00,  45,     (-6.40, 8.20), 26)
+m5 = Thruster(-1.0,  1.0,  0.0,     -90,  45,     (-6.40, 8.20), 16)
+m6 = Thruster( 1.0,  1.0,  0.0,      90,  45,     (-6.40, 8.20), 20)
 
-m1 = Thruster(1.25, -1, -0.25,     0,  -90,            (-6.40, 8.20), 9)
-m2 = Thruster(1.25,  0,   -0.25,      0,  00,     (-6.40, 8.20), 11)
-m3 = Thruster(1.25,   1,   -0.25,     0,  -90,       (-6.40, 8.20), 19)
-m4 = Thruster(-1.25,  1,   -0.25,      0,   -90,       (-6.40, 8.20), 26)
-m5 = Thruster(-1.25,  0,   -0.25,     0,  00,     (-6.40, 8.20), 16)
-m6 = Thruster(-1.25, -1, -0.25,     0,  -90,            (-6.40, 8.20), 20)
+# m1 = Thruster(1.25, -1, -0.25,     0,  -90,            (-6.40, 8.20), 9)
+# m2 = Thruster(1.25,  0,   -0.25,      0,  00,     (-6.40, 8.20), 11)
+# m3 = Thruster(1.25,   1,   -0.25,     0,  -90,       (-6.40, 8.20), 19)
+# m4 = Thruster(-1.25,  1,   -0.25,      0,   -90,       (-6.40, 8.20), 26)
+# m5 = Thruster(-1.25,  0,   -0.25,     0,  00,     (-6.40, 8.20), 16)
+# m6 = Thruster(-1.25, -1, -0.25,     0,  -90,            (-6.40, 8.20), 20)
 
 motors = (m1, m2, m3, m4, m5, m6)
 
@@ -103,10 +103,10 @@ def enabled():
     z_speed = ((min_z * controller.getButton(2)) + (max_y * controller.getButton(0))) * 0.4
 
     yaw_speed = 9 * controller.getAxis(0)
-    pitch_speed = -9 * controller.getAxis(1)
+    pitch_speed = 0#-9 * controller.getAxis(1)
     roll_speed = 0
-    if controller.getButton(3):
-        roll_speed = 9 * controller.getAxis(0)
+    # if controller.getButton(3):
+    #     roll_speed = 9 * controller.getAxis(0)
     # print(roll_speed)
 
     if controller.getButton(17):
@@ -128,7 +128,7 @@ def enabled():
 
     try:
         quat = imu.get_quaternion()
-        # quat = None
+        quat = None
     except OSError:
         quat = None
     if quat is not None:
@@ -146,8 +146,8 @@ def enabled():
 
     # print(x_speed_b, y_speed_b, z_speed_b)
 
-    br = abs(roll_speed) > 0.1
-    bp = abs(pitch_speed) > 0.1
+    br = False #abs(roll_speed) > 0.1
+    bp = False #abs(pitch_speed) > 0.1
     by = abs(yaw_speed) > 0.1
 
     if quat is None or (br and bp and by):
@@ -167,17 +167,17 @@ def enabled():
             ini_quat = imu.get_quaternion()
             mode = "roll+yaw"
         _, pitch_speed, _ = quat_pid(imu, ini_quat, [1,0,1])
-    elif (abs(roll_speed) > 0.1):
+    elif (br):
         if mode != "roll":
             ini_quat = imu.get_quaternion()
             mode = "roll"
         _, pitch_speed, yaw_speed = quat_pid(imu, ini_quat, [1,0,0])
-    elif (abs(pitch_speed) > 0.1):
+    elif (bp):
         if mode != "pitch":
             ini_quat = imu.get_quaternion()
             mode = "pitch"
         roll_speed, _, yaw_speed = quat_pid(imu, ini_quat, [0,1,0])
-    elif (abs(yaw_speed) > 0.1):
+    elif (by):
         if mode != "yaw":
             ini_quat = imu.get_quaternion()
             mode = "yaw"
@@ -205,10 +205,10 @@ def enabled():
     motor_speeds = solve_motion(motors, x_speed + x_speed_b, y_speed - y_speed_b, z_speed + z_speed_b, pitch_speed, roll_speed, yaw_speed)["speeds"]
 
 
-    # for motor, speed in zip(motors, motor_speeds):
-    #     motor.set_speed(speed)
-    m2.set_speed(motor_speeds[1])
-    m5.set_speed(motor_speeds[4])
+    for motor, speed in zip(motors, motor_speeds):
+        motor.set_speed(speed)
+    # m2.set_speed(motor_speeds[1])
+    # m5.set_speed(motor_speeds[4])
     # # # print([imu.get_accel_x(), imu.get_accel_y(), imu.get_accel_z()])
     # global i
     # m1.set_speed(i)
